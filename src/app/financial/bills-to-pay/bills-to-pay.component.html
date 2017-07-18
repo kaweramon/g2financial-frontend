@@ -1,0 +1,126 @@
+<div class="col-lg-12 col-md-12" style="padding: 0px;" *ngIf="!isPaymentSelected">
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th class="text-center col-lg-2 col-md-2">Vencimento</th>
+        <th class="text-left col-md-6 col-lg-6">Descrição</th>
+        <th class="text-center col-lg-2 col-md-2">Valor</th>
+        <th class="text-center col-lg-1 col-md-1"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let billToPayPayment of listBillToPayPayment
+          | paginate: {id: 'tableBillsToPay', itemsPerPage: 10, currentPage: page }"
+          [ngClass]="{'bg-danger' : isDateLessOrEqualThanToday(billToPayPayment) === 'IS_BEFORE',
+          'bg-info' : isDateLessOrEqualThanToday(billToPayPayment) === 'IS_SAME'}">
+        <td class="text-center">{{getConvertedDate(billToPayPayment.maturity)}}</td>
+        <td class="text-left">{{billToPayPayment.description}}</td>
+        <td class="text-center">R$ {{billToPayPayment.amountPaid}}</td>
+        <td class="text-center">
+          <input type="checkbox" name="isChecked" [(ngModel)]="billToPayPayment.isChecked">
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <pagination-controls id="tableBillsToPay" previousLabel="Anterior"
+                       nextLabel="Próximo"
+                       (pageChange)="page = $event">
+  </pagination-controls>
+</div>
+<div class="col-lg-12 col-md-12" style="padding: 0px" *ngIf="!isPaymentSelected">
+  <button class="btn btn-primary pull-right" (click)="payBills()">Pagar</button>
+</div>
+
+<div class="col-lg-12 col-md-12" style="padding: 0px;" *ngIf="isPaymentSelected">
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th class="text-center">Vencimento</th>
+        <th class="text-left">Descrição</th>
+        <th class="text-center">Valor</th>
+        <th class="text-center">Juros</th>
+        <th class="text-center">SubTotal</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let billToPayment of listSelectedBillToPayPayment
+          | paginate: {id: 'tableBillsToPaySelected', itemsPerPage: 10, currentPage: page }">
+        <td class="text-center">{{billToPayment.maturity}}</td>
+        <td class="text-left">{{billToPayment.description}}</td>
+        <td class="text-center">{{billToPayment.amountPaid}}</td>
+        <td class="text-center">{{billToPayment.interest}}</td>
+        <td class="text-center">{{billToPayment.subTotal}}</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="row">
+    <div class="col-lg-10 col-md-10">
+      <pagination-controls id="tableBillsToPaySelected" previousLabel="Anterior"
+                           nextLabel="Próximo"
+                           (pageChange)="page = $event"></pagination-controls>
+    </div>
+    <div class="col-lg-2 col-md-2">
+      <label class="control-label">Total: {{totalPayment}}</label>
+    </div>
+  </div>
+</div>
+<div class="col-lg-12 col-md-12" *ngIf="isPaymentSelected" style="padding: 0px">
+  <label class="control-label">Forma de Pagamento</label>
+  <button class="btn btn-primary" (click)="changePaymentMethod('BILLET')"><span class="fa fa-file-text-o"></span> Boleto</button>
+  <button class="btn btn-primary" (click)="changePaymentMethod('CREDIT')"><span class="fa fa-credit-card"></span> Crédito</button>
+  <button class="btn btn-primary" (click)="changePaymentMethod('DEBIT')"><span class="fa fa-credit-card-alt"></span> Débito</button>
+  <button class="btn btn-primary" (click)="changePaymentMethod('ONLINE_DEBIT')"><span class="fa fa-usd"></span> Débito Online</button>
+  <button class="btn btn-primary" (click)="changePaymentMethod('ACCOUNT_DEBIT')"><span class="fa fa-check-square-o"></span> Débito em Conta</button>
+</div>
+
+<div class="col-lg-12 col-md-12" style="padding: 0px; margin-top: 15px" *ngIf="paymentMethod === 'CREDIT' && isPaymentSelected">
+  <form class="form">
+    <div class="row">
+      <div class="col-lg-4 col-md-4 form-group">
+        <label for="inputCreditCardBrand" class="control-label">Bandeira</label>
+        <select name="inputCreditCardBrand" id="inputCreditCardBrand" class="form-control">
+          <option value="Visa">Visa</option>
+          <option value="">MasterCard</option>
+          <option value="">Elo</option>
+          <option value="">Diners Club</option>
+          <option value="">Hipercard</option>
+        </select>
+      </div>
+      <div class="col-lg-4 col-md-4 form-group">
+        <label for="inputCreditCardNumber" class="control-label">Número</label>
+        <input type="text" id="inputCreditCardNumber" class="form-control">
+      </div>
+      <div class="col-lg-2 col-md-2 form-group">
+        <label for="inputCreditCardValidDate" class="control-label">Validade</label>
+        <input type="text" id="inputCreditCardValidDate" class="form-control" [textMask]="{mask: maskValidDate}">
+      </div>
+      <div class="col-lg-2 col-md-2 form-group">
+        <label for="inputCreditCardSecurityCode" class="control-label">Cód. Segurança</label>
+        <input type="text" id="inputCreditCardSecurityCode" class="form-control" [textMask]="{mask: maskSecurityCode}">
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-lg-4 col-md-4 form-group">
+        <label for="inputCreditCardHolder" class="control-label">Nome impresso</label>
+        <input type="text" id="inputCreditCardHolder" class="form-control">
+      </div>
+      <div class="col-lg-4 col-md-4 form-group">
+        <label for="inputCreditCardInstallments" class="control-label">Parcelas</label>
+        <select name="inputCreditCardInstallments" id="inputCreditCardInstallments" class="form-control">
+          <option value="">1x</option>
+          <option value="">2x</option>
+          <option value="">3x</option>
+          <option value="">4x</option>
+          <option value="">5x</option>
+          <option value="">6x</option>
+          <option value="">7x</option>
+          <option value="">8x</option>
+          <option value="">9x</option>
+        </select>
+      </div>
+    </div>
+    <div class="col-lg-12 col-md-12 form-group" style="padding: 0px">
+      <button class="btn btn-primary pull-right">Finalizar</button>
+    </div>
+  </form>
+</div>
