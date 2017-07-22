@@ -10,13 +10,13 @@
       <h4>{{client.cnpj}}</h4>
     </div>
   </div>
-  <div class="row">
+  <div class="row" style="margin-top: 20px">
     <div class="col-lg-10 col-md-10">
-      <button class="btn btn-primary pull-right" (click)="goToSearchClient()">Nova Consulta</button>
+      <button class="btn btn-primary pull-right"(click)="goToSearchClient()">Nova Consulta</button>
     </div>
   </div>
-  <div class="row">
-    <div class="col-lg-10 col-md-10">
+  <div class="row" style="margin-top: 20px">
+    <div class="col-lg-10 col-md-10" style="padding: 0px">
       <tabset #financialTabs>
         <tab heading="Contas a pagar">
           <app-bills-to-pay></app-bills-to-pay>

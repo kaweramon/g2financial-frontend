@@ -8,11 +8,13 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
 var moment = require("moment");
+var payment_1 = require("./payment");
 var BillsToPayComponent = (function () {
-    function BillsToPayComponent(route, service) {
+    function BillsToPayComponent(route, service, typeInterestService) {
         var _this = this;
         this.route = route;
         this.service = service;
+        this.typeInterestService = typeInterestService;
         this.listBillToPayPayment = [];
         this.listSelectedBillToPayPayment = [];
         this.isPaymentSelected = false;
@@ -20,9 +22,14 @@ var BillsToPayComponent = (function () {
         this.maskValidDate = [/[0-9]/, /\d/, '/', /\d/, /\d/, /\d/, /\d/];
         this.maskSecurityCode = [/[0-9]/, /\d/, /\d/];
         this.paymentMethod = '';
+        this.payment = new payment_1.Payment();
+        this.paymentMethod = 'RECURRENT_CREDIT';
         this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(function (result) {
             _this.listBillToPay = result;
             _this.getListBillToPayPayment();
+        });
+        this.typeInterestService.getByType('MENSALIDADE').subscribe(function (result) {
+            _this.typeInterestCharge = result;
         });
     }
     BillsToPayComponent.prototype.getListBillToPayPayment = function () {
@@ -32,6 +39,7 @@ var BillsToPayComponent = (function () {
                 billToPay.listBillToPayPayment.forEach(function (billToPayPayment) {
                     billToPayPayment.description = billToPay.description;
                     billToPayPayment.isChecked = false;
+                    _this.calculateInterests(billToPayPayment);
                     _this.listBillToPayPayment.push(billToPayPayment);
                 });
             }
@@ -42,7 +50,6 @@ var BillsToPayComponent = (function () {
         this.isPaymentSelected = true;
         this.listBillToPayPayment.forEach(function (billToPayPayment) {
             if (billToPayPayment.isChecked) {
-                billToPayPayment.subTotal = billToPayPayment.amountPaid + billToPayPayment.interest;
                 _this.totalPayment += billToPayPayment.subTotal;
                 _this.listSelectedBillToPayPayment.push(billToPayPayment);
             }
@@ -63,6 +70,55 @@ var BillsToPayComponent = (function () {
     };
     BillsToPayComponent.prototype.changePaymentMethod = function (method) {
         this.paymentMethod = method;
+    };
+    BillsToPayComponent.prototype.doPayment = function () {
+        if (this.paymentMethod === 'CREDIT') {
+            this.payment.Type = "CreditCard";
+            this.payment.Installments = parseInt(this.payment.Installments.toString());
+        }
+        else if (this.paymentMethod === 'DEBIT') {
+            this.payment.Type = "DebitCard";
+        }
+        this.payment.Amount = 5;
+        this.payment.SoftDescriptor = "TESTE";
+        var test = {
+            MerchantOrderId: "2014111703",
+            Customer: {
+                Name: "Teste"
+            },
+            Payment: this.payment
+        };
+        this.service.paymentCreditCard(test).subscribe(function (result) {
+            console.log(result);
+        }, function (error) {
+            console.log(error);
+        });
+    };
+    BillsToPayComponent.prototype.calculateInterests = function (billToPayment) {
+        billToPayment.amountInterest = (billToPayment.amount / 100) * 1;
+        var year = moment(billToPayment.maturity).add(1, 'd').year();
+        var month = moment(billToPayment.maturity).add(1, 'd').month();
+        var day = moment(billToPayment.maturity).add(1, 'd').date();
+        var now = moment();
+        var monthInArrears = parseInt(moment([now.year(), now.month(), now.date()]).diff(moment([year, month, day]), 'months', true).toString(), 10);
+        var daysInArrears = parseInt(moment().diff(moment(billToPayment.maturity).add(1, 'd'), 'days').toString(), 10);
+        billToPayment.daysInArrears = daysInArrears;
+        var chargesInDayMonths = [];
+        if (daysInArrears !== undefined && daysInArrears > 0) {
+            billToPayment.amountInterest = (billToPayment.amount / 100) * this.typeInterestCharge.percentInterest;
+            billToPayment.amountCharges = 0.0;
+            for (var i = 0; i < daysInArrears; i++) {
+                billToPayment.amountCharges += (billToPayment.amount / 100) * this.typeInterestCharge.percentCharges;
+                if (monthInArrears !== undefined && monthInArrears > 0 && i > 28 && moment(billToPayment.maturity).add(i + 1, 'd').date() === day) {
+                    chargesInDayMonths.push(billToPayment.amountCharges);
+                }
+            }
+            billToPayment.amountLiveDays = 0.0;
+            if (chargesInDayMonths.length > 0) {
+                billToPayment.amountLiveDays = ((billToPayment.amount / 100) * (this.typeInterestCharge.percentLiveDays * billToPayment.daysInArrears));
+            }
+            billToPayment.subTotal = billToPayment.amount + billToPayment.amountInterest + billToPayment.amountLiveDays + billToPayment.amountCharges;
+        }
     };
     return BillsToPayComponent;
 }());

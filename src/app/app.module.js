@@ -21,6 +21,12 @@ var bills_to_pay_component_1 = require("./financial/bills-to-pay/bills-to-pay.co
 var paid_bills_component_1 = require("./financial/paid-bills/paid-bills.component");
 var bill_to_pay_service_1 = require("./financial/bills-to-pay/bill-to-pay.service");
 var ngx_pagination_1 = require("ngx-pagination");
+var debit_card_payment_component_1 = require("./financial/bills-to-pay/debit-card-payment/debit-card-payment.component");
+var credit_card_payment_component_1 = require("./financial/bills-to-pay/credit-card-payment/credit-card-payment.component");
+var ng2_toasty_1 = require("ng2-toasty");
+var billet_payment_component_1 = require("./financial/bills-to-pay/billet-payment/billet-payment.component");
+var type_interest_charge_service_1 = require("./financial/type-interest-charge.service");
+var recurrent_payment_component_1 = require("./financial/bills-to-pay/recurrent-payment/recurrent-payment.component");
 var AppModule = (function () {
     function AppModule() {
     }
@@ -33,7 +39,11 @@ AppModule = __decorate([
             financial_component_1.FinancialComponent,
             search_client_component_1.SearchClientComponent,
             bills_to_pay_component_1.BillsToPayComponent,
-            paid_bills_component_1.PaidBillsComponent
+            paid_bills_component_1.PaidBillsComponent,
+            debit_card_payment_component_1.DebitCardPaymentComponent,
+            credit_card_payment_component_1.CreditCardPaymentComponent,
+            billet_payment_component_1.BilletPaymentComponent,
+            recurrent_payment_component_1.RecurrentPaymentComponent
         ],
         imports: [
             platform_browser_1.BrowserModule,
@@ -42,9 +52,10 @@ AppModule = __decorate([
             angular2_text_mask_1.TextMaskModule,
             ngx_bootstrap_1.TabsModule.forRoot(),
             ngx_pagination_1.NgxPaginationModule,
-            app_routes_1.routing
+            app_routes_1.routing,
+            ng2_toasty_1.ToastyModule.forRoot()
         ],
-        providers: [client_service_1.ClientService, bill_to_pay_service_1.BillToPayService],
+        providers: [client_service_1.ClientService, bill_to_pay_service_1.BillToPayService, type_interest_charge_service_1.TypeInterestChargeService],
         bootstrap: [app_component_1.AppComponent]
     })
 ], AppModule);

@@ -14,6 +14,12 @@ import { BillsToPayComponent } from './financial/bills-to-pay/bills-to-pay.compo
 import { PaidBillsComponent } from './financial/paid-bills/paid-bills.component';
 import {BillToPayService} from './financial/bills-to-pay/bill-to-pay.service';
 import {NgxPaginationModule} from 'ngx-pagination';
+import { DebitCardPaymentComponent } from './financial/bills-to-pay/debit-card-payment/debit-card-payment.component';
+import { CreditCardPaymentComponent } from './financial/bills-to-pay/credit-card-payment/credit-card-payment.component';
+import {ToastyModule} from 'ng2-toasty';
+import { BilletPaymentComponent } from './financial/bills-to-pay/billet-payment/billet-payment.component';
+import {TypeInterestChargeService} from './financial/type-interest-charge.service';
+import { RecurrentPaymentComponent } from './financial/bills-to-pay/recurrent-payment/recurrent-payment.component';
 
 @NgModule({
   declarations: [
@@ -21,7 +27,11 @@ import {NgxPaginationModule} from 'ngx-pagination';
     FinancialComponent,
     SearchClientComponent,
     BillsToPayComponent,
-    PaidBillsComponent
+    PaidBillsComponent,
+    DebitCardPaymentComponent,
+    CreditCardPaymentComponent,
+    BilletPaymentComponent,
+    RecurrentPaymentComponent
   ],
   imports: [
     BrowserModule,
@@ -30,9 +40,10 @@ import {NgxPaginationModule} from 'ngx-pagination';
     TextMaskModule,
     TabsModule.forRoot(),
     NgxPaginationModule,
-    routing
+    routing,
+    ToastyModule.forRoot()
   ],
-  providers: [ClientService, BillToPayService],
+  providers: [ClientService, BillToPayService, TypeInterestChargeService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

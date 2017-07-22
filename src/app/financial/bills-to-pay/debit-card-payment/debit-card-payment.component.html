@@ -1,0 +1,43 @@
+<div class="col-lg-12 col-md-12" style="padding: 0px; margin-top: 15px">
+  <ng2-toasty></ng2-toasty>
+  <form class="form">
+    <div class="row">
+      <div class="col-lg-4 col-md-4 form-group">
+        <label for="inputDebitCardBrand" class="control-label">Bandeira</label>
+        <select name="inputDebitCardBrand" id="inputDebitCardBrand" class="form-control"
+                [(ngModel)]="payment.DebitCard.Brand">
+          <option value="Visa">Visa</option>
+          <option value="">MasterCard</option>
+          <option value="">Elo</option>
+          <option value="">Diners Club</option>
+          <option value="">Hipercard</option>
+        </select>
+      </div>
+      <div class="col-lg-4 col-md-4 form-group">
+        <label for="inputDebitCardNumber" class="control-label">Número</label>
+        <input type="text" name="CardNumber" id="inputDebitCardNumber" class="form-control"
+               [(ngModel)]="payment.DebitCard.CardNumber">
+      </div>
+      <div class="col-lg-2 col-md-2 form-group">
+        <label for="inputDebitCardValidDate" class="control-label">Validade</label>
+        <input type="text" id="inputDebitCardValidDate" name="ExpirationDate" class="form-control"
+               [textMask]="{mask: maskValidDate}" [(ngModel)]="payment.DebitCard.ExpirationDate">
+      </div>
+      <div class="col-lg-2 col-md-2 form-group">
+        <label for="inputDebitCardSecurityCode" class="control-label">Cód. Segurança</label>
+        <input type="text" id="inputDebitCardSecurityCode" class="form-control" [textMask]="{mask: maskSecurityCode}"
+               [(ngModel)]="payment.DebitCard.SecurityCode" name="SecurityCode">
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-lg-4 col-md-4 form-group">
+        <label for="inputDebitCardHolder" class="control-label">Nome impresso</label>
+        <input type="text" id="inputDebitCardHolder" class="form-control"
+               [(ngModel)]="payment.DebitCard.Holder" name="Holder">
+      </div>
+    </div>
+    <div class="col-lg-12 col-md-12 form-group" style="padding: 0px">
+      <button class="btn btn-primary pull-right" (click)="doPayment()">Finalizar</button>
+    </div>
+  </form>
+</div>
