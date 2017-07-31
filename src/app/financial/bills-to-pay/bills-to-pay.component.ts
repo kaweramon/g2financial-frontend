@@ -38,7 +38,7 @@ export class BillsToPayComponent {
 
   constructor(private route: ActivatedRoute, private service: BillToPayService, private typeInterestService: TypeInterestChargeService) {
     this.payment = new Payment();
-    this.paymentMethod = 'RECURRENT_CREDIT';
+    this.paymentMethod = 'CREDIT';
     this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(result => {
       this.listBillToPay = result;
       this.getListBillToPayPayment();
@@ -53,7 +53,7 @@ export class BillsToPayComponent {
       if (billToPay.listBillToPayPayment !== null && billToPay.listBillToPayPayment.length > 0) {
         billToPay.listBillToPayPayment.forEach(billToPayPayment => {
           billToPayPayment.description = billToPay.description;
-          billToPayPayment.isChecked = false;
+          this.isDateLessOrEqualThanToday(billToPayPayment);
           this.calculateInterests(billToPayPayment);
           this.listBillToPayPayment.push(billToPayPayment);
         });
@@ -63,6 +63,7 @@ export class BillsToPayComponent {
 
   public payBills(): void {
     this.isPaymentSelected = true;
+    this.listSelectedBillToPayPayment = [];
     this.listBillToPayPayment.forEach(billToPayPayment => {
       if (billToPayPayment.isChecked) {
         this.totalPayment += billToPayPayment.subTotal;
@@ -75,44 +76,16 @@ export class BillsToPayComponent {
     return moment(date).add(1, 'd').format('DD/MM/YYYY');
   }
 
-  public isDateLessOrEqualThanToday(billToPayPayment: any): string {
+  public isDateLessOrEqualThanToday(billToPayPayment: any): void {
+    billToPayPayment.isChecked = false;
     if (billToPayPayment.maturity === (moment().subtract(1, 'd').format('YYYY-MM-DD'))) {
       billToPayPayment.isChecked = true;
-      return 'IS_SAME';
+      billToPayPayment.dateStatus = 'IS_SAME';
     }
     if (moment(billToPayPayment.maturity).isBefore(moment().subtract(1, 'd'))) {
       billToPayPayment.isChecked = true;
-      return 'IS_BEFORE';
+      billToPayPayment.dateStatus = 'IS_BEFORE';
     }
-  }
-
-  public changePaymentMethod(method: string): void {
-    this.paymentMethod = method;
-  }
-
-  public doPayment(): void {
-
-    if (this.paymentMethod === 'CREDIT') {
-      this.payment.Type = "CreditCard";
-      this.payment.Installments = parseInt(this.payment.Installments.toString());
-    } else if(this.paymentMethod === 'DEBIT') {
-      this.payment.Type = "DebitCard";
-    }
-    this.payment.Amount = 5;
-    this.payment.SoftDescriptor = "TESTE";
-
-    let test = {
-      MerchantOrderId:"2014111703",
-      Customer: {
-        Name: "Teste"
-      },
-      Payment: this.payment
-    };
-    this.service.paymentCreditCard(test).subscribe(result => {
-      console.log(result);
-    }, error => {
-      console.log(error);
-    })
   }
 
   private calculateInterests(billToPayment: BillToPayPayment): void {
@@ -139,7 +112,9 @@ export class BillsToPayComponent {
         billToPayment.amountLiveDays =  ((billToPayment.amount / 100) * (this.typeInterestCharge.percentLiveDays * billToPayment.daysInArrears));
       }
       billToPayment.subTotal = billToPayment.amount + billToPayment.amountInterest + billToPayment.amountLiveDays + billToPayment.amountCharges;
+    } else {
+      billToPayment.subTotal = billToPayment.amount;
     }
-  }z
+  }
 
 }

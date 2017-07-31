@@ -8,21 +8,20 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
 var http_1 = require("@angular/http");
-var TypeInterestChargeService = (function () {
-    function TypeInterestChargeService(http) {
+var CieloPaymentService = (function () {
+    function CieloPaymentService(http) {
         this.http = http;
-        this.urlTypeInterestBillToPay = 'http://localhost:8080/type-interest/';
+        this.urlCieloPayment = 'http://localhost:8080/cielo-payment/';
         this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
         this.params = new http_1.URLSearchParams();
     }
-    TypeInterestChargeService.prototype.getByType = function (type) {
-        this.params.set('type', type);
-        return this.http.get(this.urlTypeInterestBillToPay, { search: this.params, headers: this.headers }).map(function (res) { return res.json(); });
+    CieloPaymentService.prototype.create = function (cieloPayment) {
+        return this.http.post(this.urlCieloPayment, cieloPayment, { headers: this.headers }).map(function (res) { return res.json(); });
     };
-    return TypeInterestChargeService;
+    return CieloPaymentService;
 }());
-TypeInterestChargeService = __decorate([
+CieloPaymentService = __decorate([
     core_1.Injectable()
-], TypeInterestChargeService);
-exports.TypeInterestChargeService = TypeInterestChargeService;
-//# sourceMappingURL=type-interest-charge.service.js.map
+], CieloPaymentService);
+exports.CieloPaymentService = CieloPaymentService;
+//# sourceMappingURL=cielo-payment.service.js.map

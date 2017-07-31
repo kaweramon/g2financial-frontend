@@ -13,6 +13,7 @@ var BillToPayService = (function () {
         this.http = http;
         this.urlBillToPay = 'http://localhost:8080/bill-to-pay/';
         this.urlSandBox = 'https://apisandbox.cieloecommerce.cielo.com.br/1/sales';
+        this.urlSandBoxCard = 'https://apisandbox.cieloecommerce.cielo.com.br/1/card';
         this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
         this.params = new http_1.URLSearchParams();
     }
@@ -22,7 +23,6 @@ var BillToPayService = (function () {
         return this.http.get(this.urlBillToPay + clientId, { headers: this.headers, search: this.params }).map(function (res) { return res.json(); });
     };
     BillToPayService.prototype.paymentCreditCard = function (payment) {
-        console.log(payment);
         this.params = new http_1.URLSearchParams();
         this.setMerchantIdAndKey();
         return this.http.post(this.urlSandBox, payment, { headers: this.headers, search: this.params }).map(function (res) { return res.json(); });
@@ -31,9 +31,9 @@ var BillToPayService = (function () {
         this.setMerchantIdAndKey();
         return this.http.post(this.urlSandBox, payment, { headers: this.headers }).map(function (res) { return res.json(); });
     };
-    BillToPayService.prototype.paymentRecurrentCard = function (payment) {
+    BillToPayService.prototype.createCardToken = function (cardTokenRequest) {
         this.setMerchantIdAndKey();
-        return this.http.post(this.urlSandBox, payment, { headers: this.headers }).map(function (res) { return res.json(); });
+        return this.http.post(this.urlSandBoxCard, cardTokenRequest, { headers: this.headers }).map(function (res) { return res.json(); });
     };
     BillToPayService.prototype.setMerchantIdAndKey = function () {
         this.headers.set('MerchantId', 'fe17c77b-df00-4ad4-a8e7-378dfc41cf96');

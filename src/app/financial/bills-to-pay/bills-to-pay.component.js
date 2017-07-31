@@ -23,7 +23,7 @@ var BillsToPayComponent = (function () {
         this.maskSecurityCode = [/[0-9]/, /\d/, /\d/];
         this.paymentMethod = '';
         this.payment = new payment_1.Payment();
-        this.paymentMethod = 'RECURRENT_CREDIT';
+        this.paymentMethod = 'CREDIT';
         this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(function (result) {
             _this.listBillToPay = result;
             _this.getListBillToPayPayment();
@@ -38,7 +38,7 @@ var BillsToPayComponent = (function () {
             if (billToPay.listBillToPayPayment !== null && billToPay.listBillToPayPayment.length > 0) {
                 billToPay.listBillToPayPayment.forEach(function (billToPayPayment) {
                     billToPayPayment.description = billToPay.description;
-                    billToPayPayment.isChecked = false;
+                    _this.isDateLessOrEqualThanToday(billToPayPayment);
                     _this.calculateInterests(billToPayPayment);
                     _this.listBillToPayPayment.push(billToPayPayment);
                 });
@@ -48,6 +48,7 @@ var BillsToPayComponent = (function () {
     BillsToPayComponent.prototype.payBills = function () {
         var _this = this;
         this.isPaymentSelected = true;
+        this.listSelectedBillToPayPayment = [];
         this.listBillToPayPayment.forEach(function (billToPayPayment) {
             if (billToPayPayment.isChecked) {
                 _this.totalPayment += billToPayPayment.subTotal;
@@ -59,40 +60,15 @@ var BillsToPayComponent = (function () {
         return moment(date).add(1, 'd').format('DD/MM/YYYY');
     };
     BillsToPayComponent.prototype.isDateLessOrEqualThanToday = function (billToPayPayment) {
+        billToPayPayment.isChecked = false;
         if (billToPayPayment.maturity === (moment().subtract(1, 'd').format('YYYY-MM-DD'))) {
             billToPayPayment.isChecked = true;
-            return 'IS_SAME';
+            billToPayPayment.dateStatus = 'IS_SAME';
         }
         if (moment(billToPayPayment.maturity).isBefore(moment().subtract(1, 'd'))) {
             billToPayPayment.isChecked = true;
-            return 'IS_BEFORE';
+            billToPayPayment.dateStatus = 'IS_BEFORE';
         }
-    };
-    BillsToPayComponent.prototype.changePaymentMethod = function (method) {
-        this.paymentMethod = method;
-    };
-    BillsToPayComponent.prototype.doPayment = function () {
-        if (this.paymentMethod === 'CREDIT') {
-            this.payment.Type = "CreditCard";
-            this.payment.Installments = parseInt(this.payment.Installments.toString());
-        }
-        else if (this.paymentMethod === 'DEBIT') {
-            this.payment.Type = "DebitCard";
-        }
-        this.payment.Amount = 5;
-        this.payment.SoftDescriptor = "TESTE";
-        var test = {
-            MerchantOrderId: "2014111703",
-            Customer: {
-                Name: "Teste"
-            },
-            Payment: this.payment
-        };
-        this.service.paymentCreditCard(test).subscribe(function (result) {
-            console.log(result);
-        }, function (error) {
-            console.log(error);
-        });
     };
     BillsToPayComponent.prototype.calculateInterests = function (billToPayment) {
         billToPayment.amountInterest = (billToPayment.amount / 100) * 1;
@@ -118,6 +94,9 @@ var BillsToPayComponent = (function () {
                 billToPayment.amountLiveDays = ((billToPayment.amount / 100) * (this.typeInterestCharge.percentLiveDays * billToPayment.daysInArrears));
             }
             billToPayment.subTotal = billToPayment.amount + billToPayment.amountInterest + billToPayment.amountLiveDays + billToPayment.amountCharges;
+        }
+        else {
+            billToPayment.subTotal = billToPayment.amount;
         }
     };
     return BillsToPayComponent;

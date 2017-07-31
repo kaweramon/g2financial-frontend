@@ -9,7 +9,7 @@ import { SearchClientComponent } from './search-client/search-client.component';
 import {TextMaskModule} from 'angular2-text-mask';
 import {routing} from './app.routes';
 import {ClientService} from './search-client/client.service';
-import {TabsModule} from 'ngx-bootstrap';
+import {ModalModule, TabsModule} from 'ngx-bootstrap';
 import { BillsToPayComponent } from './financial/bills-to-pay/bills-to-pay.component';
 import { PaidBillsComponent } from './financial/paid-bills/paid-bills.component';
 import {BillToPayService} from './financial/bills-to-pay/bill-to-pay.service';
@@ -20,6 +20,10 @@ import {ToastyModule} from 'ng2-toasty';
 import { BilletPaymentComponent } from './financial/bills-to-pay/billet-payment/billet-payment.component';
 import {TypeInterestChargeService} from './financial/type-interest-charge.service';
 import { RecurrentPaymentComponent } from './financial/bills-to-pay/recurrent-payment/recurrent-payment.component';
+import {BillToPayAmountsPaidService} from './financial/bills-to-pay/bill-to-pay-amounts-paid.service';
+import {BillToPayPaymentService} from './financial/bills-to-pay/bill-to-pay-payment.service';
+import {CieloPaymentService} from './financial/bills-to-pay/cielo-payment.service';
+import {SlimLoadingBarModule} from 'ng2-slim-loading-bar';
 
 @NgModule({
   declarations: [
@@ -41,9 +45,12 @@ import { RecurrentPaymentComponent } from './financial/bills-to-pay/recurrent-pa
     TabsModule.forRoot(),
     NgxPaginationModule,
     routing,
-    ToastyModule.forRoot()
+    ToastyModule.forRoot(),
+    SlimLoadingBarModule.forRoot(),
+    ModalModule.forRoot()
   ],
-  providers: [ClientService, BillToPayService, TypeInterestChargeService],
+  providers: [ClientService, BillToPayService, TypeInterestChargeService, BillToPayAmountsPaidService,
+    BillToPayPaymentService, CieloPaymentService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

@@ -8,21 +8,22 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
 var http_1 = require("@angular/http");
-var TypeInterestChargeService = (function () {
-    function TypeInterestChargeService(http) {
+var BillToPayPaymentService = (function () {
+    function BillToPayPaymentService(http) {
         this.http = http;
-        this.urlTypeInterestBillToPay = 'http://localhost:8080/type-interest/';
+        this.urlBillToPayPayment = 'http://localhost:8080/bill-to-pay-payment/';
+        this.urlSandBox = 'https://apisandbox.cieloecommerce.cielo.com.br/1/sales';
         this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
         this.params = new http_1.URLSearchParams();
     }
-    TypeInterestChargeService.prototype.getByType = function (type) {
-        this.params.set('type', type);
-        return this.http.get(this.urlTypeInterestBillToPay, { search: this.params, headers: this.headers }).map(function (res) { return res.json(); });
+    BillToPayPaymentService.prototype.updateList = function (listBillToPayPayment) {
+        return this.http.put(this.urlBillToPayPayment + "/list", listBillToPayPayment, { headers: this.headers })
+            .map(function (res) { return res.json(); });
     };
-    return TypeInterestChargeService;
+    return BillToPayPaymentService;
 }());
-TypeInterestChargeService = __decorate([
+BillToPayPaymentService = __decorate([
     core_1.Injectable()
-], TypeInterestChargeService);
-exports.TypeInterestChargeService = TypeInterestChargeService;
-//# sourceMappingURL=type-interest-charge.service.js.map
+], BillToPayPaymentService);
+exports.BillToPayPaymentService = BillToPayPaymentService;
+//# sourceMappingURL=bill-to-pay-payment.service.js.map

@@ -18,6 +18,7 @@ export class BillToPayPayment {
   public isChecked: boolean;
   public subTotal: number;
   public daysInArrears: number;
+  public dateStatus: string;
 
   constructor() {
     this.amount = 0.0;

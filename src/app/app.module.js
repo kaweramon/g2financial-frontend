@@ -27,6 +27,10 @@ var ng2_toasty_1 = require("ng2-toasty");
 var billet_payment_component_1 = require("./financial/bills-to-pay/billet-payment/billet-payment.component");
 var type_interest_charge_service_1 = require("./financial/type-interest-charge.service");
 var recurrent_payment_component_1 = require("./financial/bills-to-pay/recurrent-payment/recurrent-payment.component");
+var bill_to_pay_amounts_paid_service_1 = require("./financial/bills-to-pay/bill-to-pay-amounts-paid.service");
+var bill_to_pay_payment_service_1 = require("./financial/bills-to-pay/bill-to-pay-payment.service");
+var cielo_payment_service_1 = require("./financial/bills-to-pay/cielo-payment.service");
+var ng2_slim_loading_bar_1 = require("ng2-slim-loading-bar");
 var AppModule = (function () {
     function AppModule() {
     }
@@ -53,9 +57,12 @@ AppModule = __decorate([
             ngx_bootstrap_1.TabsModule.forRoot(),
             ngx_pagination_1.NgxPaginationModule,
             app_routes_1.routing,
-            ng2_toasty_1.ToastyModule.forRoot()
+            ng2_toasty_1.ToastyModule.forRoot(),
+            ng2_slim_loading_bar_1.SlimLoadingBarModule.forRoot(),
+            ngx_bootstrap_1.ModalModule.forRoot()
         ],
-        providers: [client_service_1.ClientService, bill_to_pay_service_1.BillToPayService, type_interest_charge_service_1.TypeInterestChargeService],
+        providers: [client_service_1.ClientService, bill_to_pay_service_1.BillToPayService, type_interest_charge_service_1.TypeInterestChargeService, bill_to_pay_amounts_paid_service_1.BillToPayAmountsPaidService,
+            bill_to_pay_payment_service_1.BillToPayPaymentService, cielo_payment_service_1.CieloPaymentService],
         bootstrap: [app_component_1.AppComponent]
     })
 ], AppModule);

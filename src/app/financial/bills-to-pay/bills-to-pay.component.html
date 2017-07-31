@@ -11,13 +11,13 @@
     <tbody>
       <tr *ngFor="let billToPayPayment of listBillToPayPayment
           | paginate: {id: 'tableBillsToPay', itemsPerPage: 10, currentPage: page }"
-          [ngClass]="{'bg-danger' : isDateLessOrEqualThanToday(billToPayPayment) === 'IS_BEFORE',
-          'bg-info' : isDateLessOrEqualThanToday(billToPayPayment) === 'IS_SAME'}">
+          [ngClass]="{'bg-danger' : billToPayPayment.dateStatus === 'IS_BEFORE',
+          'bg-info': billToPayPayment.dateStatus === 'IS_SAME'}">
         <td class="text-center">{{getConvertedDate(billToPayPayment.maturity)}}</td>
         <td class="text-left">{{billToPayPayment.description}}</td>
         <td class="text-center">R$ {{billToPayPayment.amount}}</td>
         <td class="text-center">
-          <input type="checkbox" name="isChecked" [(ngModel)]="billToPayPayment.isChecked">
+          <input type="checkbox" [(ngModel)]="billToPayPayment.isChecked">
         </td>
       </tr>
     </tbody>
@@ -55,8 +55,8 @@
       <tbody>
       <tr *ngFor="let billToPayment of listSelectedBillToPayPayment
           | paginate: {id: 'tableBillsToPaySelected', itemsPerPage: 10, currentPage: page }">
-        <td class="text-center">{{billToPayment.maturity}}</td>
-        <td class="text-center">{{billToPayment.daysInArrears}}</td>
+        <td class="text-center">{{getConvertedDate(billToPayment.maturity)}}</td>
+        <td class="text-center">{{billToPayment.daysInArrears >= 0 ? billToPayment.daysInArrears : 0}}</td>
         <td class="text-left">{{billToPayment.description}}</td>
         <td class="text-center">{{billToPayment.amount | number : '1.2-2'}}</td>
         <td class="text-center">{{typeInterestCharge.percentInterest}} % / R$ {{billToPayment.amountInterest | number : '1.2-2'}}</td>
@@ -79,13 +79,12 @@
   </div>
 </div>
 
-<div class="row">
+<div class="row" *ngIf="listSelectedBillToPayPayment.length > 0">
   <div class="col-lg-12 col-md-12" *ngIf="isPaymentSelected">
     <div class="row">
       <div class="col-lg-4 col-md-4 form-group">
         <label class="control-label">Forma de Pagamento</label>
-        <select name="" id="" class="form-control">
-          <option value="RECURRENT_CREDIT">Crédito Recorrente</option>
+        <select name="paymentMethod" id="paymentMethod" class="form-control" [(ngModel)]="paymentMethod">
           <option value="CREDIT">Cartão de Crédito</option>
           <option value="DEBIT">Cartão de Débito</option>
         </select>
@@ -94,16 +93,12 @@
   </div>
 </div>
 
-<div class="row">
+<div class="row" *ngIf="listSelectedBillToPayPayment.length > 0">
   <div *ngIf="paymentMethod === 'DEBIT' && isPaymentSelected">
     <app-debit-card-payment [totalPayment]="totalPayment"></app-debit-card-payment>
   </div>
 
   <div *ngIf="paymentMethod === 'CREDIT' && isPaymentSelected">
-    <app-credit-card-payment [totalPayment]="totalPayment"></app-credit-card-payment>
-  </div>
-
-  <div *ngIf="paymentMethod === 'RECURRENT_CREDIT' && isPaymentSelected">
-    <app-recurrent-payment [totalPayment]="totalPayment"></app-recurrent-payment>
+    <app-recurrent-payment [listBillToPayPayment]="listSelectedBillToPayPayment" [totalPayment]="totalPayment"></app-recurrent-payment>
   </div>
 </div>

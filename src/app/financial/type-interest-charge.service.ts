@@ -6,7 +6,7 @@ import {TypeInterestCharge} from './type-interest-charge';
 @Injectable()
 export class TypeInterestChargeService {
 
-  private TypeInterestBillToPay = 'http://localhost:8080/type-interest/';
+  private urlTypeInterestBillToPay = 'http://localhost:8080/type-interest/';
   headers = new Headers({ 'Content-Type': 'application/json' });
   private params = new URLSearchParams();
 
@@ -14,7 +14,7 @@ export class TypeInterestChargeService {
 
   public getByType(type: string): Observable<TypeInterestCharge> {
     this.params.set('type', type);
-    return this.http.get(this.TypeInterestBillToPay, {search: this.params, headers: this.headers}).map(res => res.json());
+    return this.http.get(this.urlTypeInterestBillToPay, {search: this.params, headers: this.headers}).map(res => res.json());
   }
 
 }
