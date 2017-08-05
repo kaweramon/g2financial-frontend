@@ -80,16 +80,16 @@
 </div>
 
 <div class="row" *ngIf="listSelectedBillToPayPayment.length > 0">
-  <div class="col-lg-12 col-md-12" *ngIf="isPaymentSelected">
-    <div class="row">
-      <div class="col-lg-4 col-md-4 form-group">
-        <label class="control-label">Forma de Pagamento</label>
-        <select name="paymentMethod" id="paymentMethod" class="form-control" [(ngModel)]="paymentMethod">
-          <option value="CREDIT">Cartão de Crédito</option>
-          <option value="DEBIT">Cartão de Débito</option>
-        </select>
-      </div>
-    </div>
+  <div class="col-lg-4 col-md-4" *ngIf="isPaymentSelected">
+    <label class="control-label">Forma de Pagamento</label>
+    <select name="paymentMethod" id="paymentMethod" class="form-control" [(ngModel)]="paymentMethod">
+      <option value="CREDIT">Cartão de Crédito</option>
+      <option value="DEBIT">Cartão de Débito</option>
+      <option value="BILLET">Boleto</option>
+    </select>
+  </div>
+  <div class="col-lg-8 col-md-8" *ngIf="isPaymentSelected && paymentMethod === 'BILLET'">
+    <button class="btn btn-primary pull-right" (click)="generateBillet()" style="margin-top: 25px;">Gerar Boleto</button>
   </div>
 </div>
 
@@ -100,5 +100,9 @@
 
   <div *ngIf="paymentMethod === 'CREDIT' && isPaymentSelected">
     <app-recurrent-payment [listBillToPayPayment]="listSelectedBillToPayPayment" [totalPayment]="totalPayment"></app-recurrent-payment>
+  </div>
+
+  <div *ngIf="paymentMethod === 'BILLET' && isPaymentSelected">
+    <app-billet-payment [totalPayment]="totalPayment"></app-billet-payment>
   </div>
 </div>

@@ -7,20 +7,23 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
-var forms_1 = require("@angular/forms");
+var moment = require("moment");
 var BilletPaymentComponent = (function () {
-    function BilletPaymentComponent(fb) {
-        this.fb = fb;
-        this.formBuilder = fb;
+    function BilletPaymentComponent(elementRef) {
+        this.elementRef = elementRef;
+        var s = document.createElement("script");
+        s.type = "text/javascript";
+        s.src = "src/app/financial/bills-to-pay/billet-payment/billet-barcode.js";
+        this.elementRef.nativeElement.appendChild(s);
     }
-    BilletPaymentComponent.prototype.initFormBuilder = function () {
-        this.formBilletPayment = this.formBuilder.group({
-            'street': [this.address.Street, [forms_1.Validators.required]],
-            'number': [this.address.Number, [forms_1.Validators.required]]
-        });
+    BilletPaymentComponent.prototype.getMaturityDate = function () {
+        return moment().format('DD/MM/YYYY');
     };
     return BilletPaymentComponent;
 }());
+__decorate([
+    core_1.Input()
+], BilletPaymentComponent.prototype, "totalPayment", void 0);
 BilletPaymentComponent = __decorate([
     core_1.Component({
         selector: 'app-billet-payment',

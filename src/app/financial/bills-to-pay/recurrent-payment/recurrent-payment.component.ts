@@ -236,12 +236,6 @@ export class RecurrentPaymentComponent {
     }
   }
 
-  public onChangeRecurrentInterval(): void {
-    if (this.payment.RecurrentPayment.Interval !== 'None') {
-      this.payment.Installments = 1;
-    }
-  }
-
   public getCurrentDate(format: string): string {
     return moment().format(format);
   }

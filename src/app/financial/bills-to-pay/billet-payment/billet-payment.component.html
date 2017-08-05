@@ -1,10 +1,219 @@
 <ng2-toasty></ng2-toasty>
-<div class="col-lg-12 col-md-12" style="padding: 0px; margin-top: 15px">
-  <form class="form">
-    <div class="row">
-      <div class="col-lg-4 col-md-4 form-group">
-        <label for="" class="control-label"></label>
-      </div>
+<div class="col-lg-10 col-md-10" style="padding: 0px; margin-top: 15px">
+
+  <div class="row">
+    <div class="col-lg-12 col-md-12" id="tablebillet">
+      <table cellSpacing=0 cellPadding=0 border=0>
+        <tr>
+          <td style='width: 1cm'></td>
+          <td style='width: 1cm'></td>
+          <td style='width: 1.9cm'></td>
+
+          <td style='width: 0.8cm'></td>
+          <td style='width: 1cm'></td>
+          <td style='width: 1cm'></td>
+          <td style='width: 1.0cm'></td>
+
+          <td style='width: 2.3cm'></td>
+          <td style='width: 2.3cm'></td>
+
+          <td style='width: 1.9cm'></td>
+
+          <td style='width: 1.9cm'></td>
+        </tr>
+        <tr>
+          <td colspan="11" style="border-top: 0.3mm dashed #000000; font-size: 1mm">&nbsp;</td>
+        </tr>
+        <tr>
+          <td colspan=4 class="logo">
+            <img style="max-width: 195px; max-height: 39px" src="https://vignette2.wikia.nocookie.net/logopedia/images/3/3f/SantanderRed.png/revision/latest?cb=20130616014900"/>
+          </td>
+          <td colspan="2" class="bankCode">104-0</td>
+          <td colspan="5" class="billetRightHeader">
+            Beneficiário
+            <p style="padding-top: 5px;font-family: arial, verdana;font-size: 0.2cm;" class="text-right">
+              G2 Soft Comercio LTDA - ME, Rua Presidente Kennedy, 122, Centro. 14.272.237/0001-36</p>
+          </td>
+        </tr>
+        <tr>
+          <td colspan=9></td>
+          <td colspan=2 class="billetRightField">Vencimento</td>
+        </tr>
+        <tr>
+          <td colspan=9></td>
+          <td colspan=2 class="billetRightTextValue">{{getMaturityDate()}}</td>
+        </tr>
+        <tr>
+          <td colspan=9></td>
+          <td colspan=2 class="billetRightField">Nosso Número</td>
+        </tr>
+        <tr>
+          <td colspan=9></td>
+          <td colspan=2 class="billetRightTextValue">00000000022969</td>
+        </tr>
+        <tr>
+          <td colspan=9></td>
+          <td colspan=2 class="billetRightField">Número do Documento</td>
+        </tr>
+        <tr>
+          <td colspan=9></td>
+          <td colspan=2 class="billetRightTextValue">339369/C</td>
+        </tr>
+        <tr>
+          <td colspan=9></td>
+          <td colspan=2 class="billetRightField">Agência/Código Beneficário</td>
+        </tr>
+        <tr>
+          <td colspan=9></td>
+          <td colspan=2 class="billetRightTextValue">0044/006678564</td>
+        </tr>
+        <tr>
+          <td colspan=9></td>
+          <td colspan=2 class="billetRightField">(=) Valor do Documento</td>
+        </tr>
+        <tr>
+          <td colspan=9 style="border-bottom: 1mm solid #000000"></td>
+          <td colspan=2 style="border-bottom: 1mm solid #000000" class="billetRightTextValue">365,99</td>
+        </tr>
+        <tr>
+          <td colspan=11 height=40 valign=top>&nbsp;</td>
+        </tr>
+        <tr>
+          <td colspan="11" style="border-top: 0.3mm dashed #000000; font-size: 1mm">&nbsp;</td>
+        </tr>
+        <tr>
+          <td colspan=4 class="logo">
+            <img style="max-width: 195px; max-height: 39px" src="https://vignette2.wikia.nocookie.net/logopedia/images/3/3f/SantanderRed.png/revision/latest?cb=20130616014900"/>
+          </td>
+          <td colspan="2" class="bankCode" >104-0</td>
+          <td colspan="5" class="billetRightHeader text-center" style="font-size: 3mm; vertical-align: bottom;">
+            03399. &nbsp;&nbsp;&nbsp; 088 02296.901040 9 6203000003959
+          </td>
+        </tr>
+        <tr>
+          <td colspan=9 style="border-right: none; border-left: none" class="billetLeftField2">Local de Pagamento</td>
+          <td colspan=2 class="billetRightField">Vencimento</td>
+        </tr>
+        <tr class="tr-border-bottom">
+          <td colspan=9 style="border-left: none;border-bottom: 0.15mm solid #000000" class="billetLeftValue2 text-center">
+            PAGAR PREFERENCIALMENTE NO BANCO SANTANDER
+          </td>
+          <td colspan=2 class="billetRightTextValue">01/07/2017</td>
+        </tr>
+        <tr>
+          <td colspan=9 style="border-right: none;border-left: none" class="billetLeftField2">Beneficiário</td>
+          <td colspan=2 class="billetRightField">Agência / Código Beneficiário</td>
+        </tr>
+        <tr class="tr-border-bottom">
+          <td colspan=9 class="billetLeftValue2" style="border-left: none;">
+            G2 Soft Comercio LtdA - ME, Rua Presidente Kennedy, 122, Centro. 14.272.237/0001-36
+          </td>
+          <td colspan=2 class="billetRightTextValue">0044 / 006678564</td>
+        </tr>
+        <tr>
+          <td colspan="2" style="border-left: none" class="billetLeftField2">
+            Data do Documento
+          </td>
+          <td colspan="2" class="billetLeftField2">
+            Número do Documento
+          </td>
+          <td colspan="2" class="billetLeftField2">
+            Espécie Documento
+          </td>
+          <td colspan=1 class="billetLeftField2">
+            Aceite
+          </td>
+          <td colspan="2" class="billetLeftField2" style="border-right: none;">
+            Data do Processamento
+          </td>
+          <td colspan="2" class="billetRightField" style="border-right: none;">
+            Nosso Número
+          </td>
+        </tr>
+        <tr class="tr-border-bottom">
+          <td colspan="2" style="border-left: none" class="billetLeftValue2">01/07/2017</td>
+          <td colspan="2" class="billetLeftValue2">339369/C</td>
+          <td colspan="2" class="billetLeftValue2">DM</td>
+          <td colspan="1" class="billetLeftValue2">N</td>
+          <td colspan="2" class="billetLeftValue2">01/07/2017</td>
+          <td colspan="2" class="billetLeftValue2">000000022969</td>
+        </tr>
+        <tr>
+          <td class="billetLeftField2" style="border-left: none" colspan="3">Carteira</td>
+          <td class="billetLeftField2" colspan="1">Espécie</td>
+          <td class="billetLeftField2" colspan="3">Quantidade</td>
+          <td class="billetLeftField2" style="border-right: none;" colspan="2">Valor</td>
+          <td class="billetLeftField2" colspan="2" style="border-right: none;">(=) Valor do Documento</td>
+        </tr>
+        <tr class="tr-border-bottom">
+          <td colspan="3" style="border-left: none" class="billetLeftValue2">COBRANCA SIMPLES - ECR</td>
+          <td colspan="1" class="billetLeftValue2">REAL</td>
+          <td colspan="3" class="billetLeftValue2"></td>
+          <td colspan="2" class="billetLeftValue2"></td>
+          <td colspan="2" class="billetLeftValue2">395,99</td>
+        </tr>
+        <tr>
+          <td colspan="6" style="border-right: none;border-left: none" class="billetLeftField2">
+            Instruções
+          </td>
+          <td colspan="3" class="billetLeftField2 text-right"
+              style="padding-right: 1mm; border-right: none; border-left: none;">
+            (Texto de responsibilidade do Cedente)
+          </td>
+          <td colspan="2" class="billetRightField">(-) Desconto</td>
+        </tr>
+        <tr>
+          <td colspan="9"></td>
+          <td colspan="2" class="billetLeftValue2" style="border-bottom: 0.15mm solid #000000">&nbsp;</td>
+        </tr>
+        <tr>
+          <td colspan="9"></td>
+          <td colspan="2" class="billetRightField">(-) Abatimento</td>
+        </tr>
+        <tr>
+          <td colspan="9"></td>
+          <td colspan="2" class="billetLeftValue2" style="border-bottom: 0.15mm solid #000000">&nbsp;</td>
+        </tr>
+        <tr>
+          <td colspan="9"></td>
+          <td colspan="2" class="billetRightField">(+) Mora</td>
+        </tr>
+        <tr>
+          <td colspan="9"></td>
+          <td colspan="2" class="billetLeftValue2" style="border-bottom: 0.15mm solid #000000">&nbsp;</td>
+        </tr>
+        <tr>
+          <td colspan="9"></td>
+          <td colspan="2" class="billetRightField">(+) Outros Acréscimos</td>
+        </tr>
+        <tr>
+          <td colspan="9"></td>
+          <td colspan="2" class="billetLeftValue2" style="border-bottom: 0.15mm solid #000000">&nbsp;</td>
+        </tr>
+        <tr>
+          <td colspan="9"></td>
+          <td colspan="2" class="billetRightField">(=) Valor Cobrado</td>
+        </tr>
+        <tr class="tr-border-bottom">
+          <td colspan="9"></td>
+          <td colspan="2" class="billetLeftValue2" style="border-bottom: 0.15mm solid #000000">&nbsp;</td>
+        </tr>
+        <tr>
+          <td colspan=11 height=40 valign=top>&nbsp;</td>
+        </tr>
+        <tr>
+          <td colspan="11" id="boleto"></td>
+        </tr>
+      </table>
     </div>
-  </form>
+  </div>
+
+  <div class="row" style="margin-top: 20px">
+    <div class="col-lg-12 col-md-12 form-group">
+      <button class="btn btn-primary pull-right" id="btnDoPayment" (click)="doPayment()">Finalizar</button>
+    </div>
+  </div>
+
+
+
 </div>

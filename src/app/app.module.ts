@@ -24,6 +24,7 @@ import {BillToPayAmountsPaidService} from './financial/bills-to-pay/bill-to-pay-
 import {BillToPayPaymentService} from './financial/bills-to-pay/bill-to-pay-payment.service';
 import {CieloPaymentService} from './financial/bills-to-pay/cielo-payment.service';
 import {SlimLoadingBarModule} from 'ng2-slim-loading-bar';
+import {BilletShippingService} from './financial/bills-to-pay/billet-payment/billet-shipping.service';
 
 @NgModule({
   declarations: [
@@ -50,7 +51,7 @@ import {SlimLoadingBarModule} from 'ng2-slim-loading-bar';
     ModalModule.forRoot()
   ],
   providers: [ClientService, BillToPayService, TypeInterestChargeService, BillToPayAmountsPaidService,
-    BillToPayPaymentService, CieloPaymentService],
+    BillToPayPaymentService, CieloPaymentService, BilletShippingService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

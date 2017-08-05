@@ -8,6 +8,8 @@ import {CreditCard} from './credit-card-payment/credit-card';
 import {TypeInterestChargeService} from '../type-interest-charge.service';
 import {TypeInterestCharge} from '../type-interest-charge';
 import {BillToPayPayment} from './bill-to-pay-payment';
+import {BilletShippingService} from './billet-payment/billet-shipping.service';
+import {BilletShipping} from './billet-payment/billet-shipping';
 
 @Component({
   selector: 'app-bills-to-pay',
@@ -36,9 +38,12 @@ export class BillsToPayComponent {
 
   public typeInterestCharge: TypeInterestCharge;
 
-  constructor(private route: ActivatedRoute, private service: BillToPayService, private typeInterestService: TypeInterestChargeService) {
+  constructor(private route: ActivatedRoute, private service: BillToPayService,
+              private typeInterestService: TypeInterestChargeService, private billetShippingService: BilletShippingService) {
     this.payment = new Payment();
-    this.paymentMethod = 'CREDIT';
+    //TODO: remover
+    this.paymentMethod = 'BILLET';
+    // this.isPaymentSelected = true;
     this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(result => {
       this.listBillToPay = result;
       this.getListBillToPayPayment();
@@ -116,5 +121,136 @@ export class BillsToPayComponent {
       billToPayment.subTotal = billToPayment.amount;
     }
   }
+
+  public generateBillet(): void {
+    let billetShipping = new BilletShipping();
+    let ourNumber = "";
+    this.billetShippingService.getLastCounter().subscribe(result => {
+      let nextCounter = result + 1;
+      billetShipping.counter = nextCounter;
+      console.log((12 - nextCounter.toString().length));
+      for (let i = 0; i < (12 - nextCounter.toString().length); i++) {
+        ourNumber += "0";
+      }
+      ourNumber += nextCounter.toString();
+      console.log(ourNumber);
+      //Calculo do digito Santander
+      let ourNumberArrayInverted = ourNumber.split("").reverse().join("");
+      let total = 0;
+      console.log("inverted: " + ourNumberArrayInverted);
+      for (let j = 0; j < ourNumberArrayInverted.length; j++) {
+        if (j < 8) {
+          total += (parseInt(ourNumberArrayInverted[j]) * (j + 2));
+        } else if (j === 8) {
+          total += (parseInt(ourNumberArrayInverted[j]) * 2);
+        } else if (j === 9) {
+          total += (parseInt(ourNumberArrayInverted[j]) * 3);
+        } else if (j === 10) {
+          total += (parseInt(ourNumberArrayInverted[j]) * 4);
+        } else if (j === 11) {
+          total += (parseInt(ourNumberArrayInverted[j]) * 5);
+        }
+      }
+      let rest = (total / 11).toString().split(".")[1].split("")[0];
+      let digit = 11 - parseInt(rest);
+      ourNumber += "-" + digit;
+      console.log(ourNumber);
+      billetShipping.ourNumber = ourNumber;
+      billetShipping.billValue = this.totalPayment;
+      billetShipping.clientId = this.route.snapshot.params["clientId"];
+      billetShipping.isCancel = false;
+      let paymentTypes = "";
+      for (let i = 0; i < this.listSelectedBillToPayPayment.length; i++) {
+        if (i < this.listSelectedBillToPayPayment.length - 1) {
+          paymentTypes += this.listSelectedBillToPayPayment[i].description + ", ";
+        } else {
+          paymentTypes += this.listSelectedBillToPayPayment[i].description;
+        }
+      }
+      billetShipping.chargingType = paymentTypes;
+      billetShipping.partialPayment = "NAO";
+      this.billetShippingService.create(billetShipping).subscribe(result => {
+        console.log(result);
+      }, error => {
+        console.log(error);
+      })
+    }, error => {
+      console.log(error);
+    });
+  }
+
+  public printBillet(): void {
+    // tablebillet
+    let printContents, popupWin;
+    printContents = document.getElementById('tablebillet').innerHTML;
+    popupWin = window.open('', '_blank', 'top=0,left=0,height=100%,width=auto');
+    popupWin.document.open();
+    popupWin.document.write(`
+      <html>
+        <head>
+          <style>
+          .logo{
+  text-align: center; height: 10mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000
+}
+.logo{
+  text-align: center; height: 10mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000
+}
+.bankCode {
+  font-size: 5mm; font-family: arial, verdana; font-weight : bold;
+  font-style: italic; text-align: center; vertical-align: bottom;
+  padding-right: 1mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000
+}
+.bankCode2 {
+  font-size: 5mm; font-family: arial, verdana; font-weight : bold;
+  font-style: italic; text-align: center; vertical-align: bottom;
+  /*border-bottom: 1.2mm solid #000000; border-right: 1.2mm solid #000000;*/
+}
+.billetNumber {
+  font-size: 5mm; font-family: arial, verdana; font-weight : bold;
+  text-align: center; vertical-align: bottom; padding-bottom : 1mm;
+}
+.billetRightHeader {
+  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; border-bottom: 1mm solid #000000
+}
+.billetRightHeader2 {
+  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;
+}
+.billetRightField {
+  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; border-left: 0.15mm solid #000000;
+}
+.billetLeftField2 {
+  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; border-left: 0.15mm solid #000000;
+}
+.billetLeftField {
+  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;
+}
+.billetLeftValue {
+  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;
+}
+.billetLeftValue2 {
+  font-size: 3mm; font-family: arial, verdana; padding-left : 1mm;
+  text-align: center; font-weight: bold; border-left: 0.15mm solid #000000;
+  border-bottom: 0.15mm solid #000000;
+}
+.billetRightTextValue {
+  font-size: 3mm; font-family: arial, verdana; text-align:right;
+  padding-right: 1mm; font-weight: bold; border-left: 0.15mm solid #000000;
+  border-bottom: 0.15mm solid #000000;
+}
+.tr-border-bottom {
+  border-bottom: 0.15mm solid #000000;
+}
+
+</style>
+          <title>Comprovante</title>
+        </head>
+    <body onload="window.print();window.close()">${printContents}</body>
+      </html>`
+    );
+    popupWin.document.close();
+  }
+
+
+
 
 }

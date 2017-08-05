@@ -1,6 +1,6 @@
-import {Component} from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {Address} from './address';
+import {Component, ElementRef, Input} from '@angular/core';
+import * as moment from 'moment';
+import {BilletShippingService} from './billet-shipping.service';
 
 @Component({
   selector: 'app-billet-payment',
@@ -9,20 +9,18 @@ import {Address} from './address';
 })
 export class BilletPaymentComponent {
 
-  public formBilletPayment: FormGroup;
+  @Input()
+  public totalPayment: number;
 
-  public formBuilder: FormBuilder;
-
-  public address: Address;
-
-  constructor(private fb: FormBuilder) {
-    this.formBuilder = fb;
+  constructor(private elementRef:ElementRef) {
+    let s = document.createElement("script");
+    s.type = "text/javascript";
+    s.src = "src/app/financial/bills-to-pay/billet-payment/billet-barcode.js";
+    this.elementRef.nativeElement.appendChild(s);
   }
 
-  public initFormBuilder(): void {
-    this.formBilletPayment = this.formBuilder.group({
-      'street': [this.address.Street, [Validators.required]],
-      'number': [this.address.Number, [Validators.required]]
-    });
+  public getMaturityDate(): string {
+    return moment().format('DD/MM/YYYY');
   }
+
 }

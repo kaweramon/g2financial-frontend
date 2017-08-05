@@ -9,12 +9,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
 var moment = require("moment");
 var payment_1 = require("./payment");
+var billet_shipping_1 = require("./billet-payment/billet-shipping");
 var BillsToPayComponent = (function () {
-    function BillsToPayComponent(route, service, typeInterestService) {
+    function BillsToPayComponent(route, service, typeInterestService, billetShippingService) {
         var _this = this;
         this.route = route;
         this.service = service;
         this.typeInterestService = typeInterestService;
+        this.billetShippingService = billetShippingService;
         this.listBillToPayPayment = [];
         this.listSelectedBillToPayPayment = [];
         this.isPaymentSelected = false;
@@ -23,7 +25,9 @@ var BillsToPayComponent = (function () {
         this.maskSecurityCode = [/[0-9]/, /\d/, /\d/];
         this.paymentMethod = '';
         this.payment = new payment_1.Payment();
-        this.paymentMethod = 'CREDIT';
+        //TODO: remover
+        this.paymentMethod = 'BILLET';
+        // this.isPaymentSelected = true;
         this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(function (result) {
             _this.listBillToPay = result;
             _this.getListBillToPayPayment();
@@ -98,6 +102,77 @@ var BillsToPayComponent = (function () {
         else {
             billToPayment.subTotal = billToPayment.amount;
         }
+    };
+    BillsToPayComponent.prototype.generateBillet = function () {
+        var _this = this;
+        var billetShipping = new billet_shipping_1.BilletShipping();
+        var ourNumber = "";
+        this.billetShippingService.getLastCounter().subscribe(function (result) {
+            var nextCounter = result + 1;
+            billetShipping.counter = nextCounter;
+            console.log((12 - nextCounter.toString().length));
+            for (var i = 0; i < (12 - nextCounter.toString().length); i++) {
+                ourNumber += "0";
+            }
+            ourNumber += nextCounter.toString();
+            console.log(ourNumber);
+            //Calculo do digito Santander
+            var ourNumberArrayInverted = ourNumber.split("").reverse().join("");
+            var total = 0;
+            console.log("inverted: " + ourNumberArrayInverted);
+            for (var j = 0; j < ourNumberArrayInverted.length; j++) {
+                if (j < 8) {
+                    total += (parseInt(ourNumberArrayInverted[j]) * (j + 2));
+                }
+                else if (j === 8) {
+                    total += (parseInt(ourNumberArrayInverted[j]) * 2);
+                }
+                else if (j === 9) {
+                    total += (parseInt(ourNumberArrayInverted[j]) * 3);
+                }
+                else if (j === 10) {
+                    total += (parseInt(ourNumberArrayInverted[j]) * 4);
+                }
+                else if (j === 11) {
+                    total += (parseInt(ourNumberArrayInverted[j]) * 5);
+                }
+            }
+            var rest = (total / 11).toString().split(".")[1].split("")[0];
+            var digit = 11 - parseInt(rest);
+            ourNumber += "-" + digit;
+            console.log(ourNumber);
+            billetShipping.ourNumber = ourNumber;
+            billetShipping.billValue = _this.totalPayment;
+            billetShipping.clientId = _this.route.snapshot.params["clientId"];
+            billetShipping.isCancel = false;
+            var paymentTypes = "";
+            for (var i = 0; i < _this.listSelectedBillToPayPayment.length; i++) {
+                if (i < _this.listSelectedBillToPayPayment.length - 1) {
+                    paymentTypes += _this.listSelectedBillToPayPayment[i].description + ", ";
+                }
+                else {
+                    paymentTypes += _this.listSelectedBillToPayPayment[i].description;
+                }
+            }
+            billetShipping.chargingType = paymentTypes;
+            billetShipping.partialPayment = "NAO";
+            _this.billetShippingService.create(billetShipping).subscribe(function (result) {
+                console.log(result);
+            }, function (error) {
+                console.log(error);
+            });
+        }, function (error) {
+            console.log(error);
+        });
+    };
+    BillsToPayComponent.prototype.printBillet = function () {
+        // tablebillet
+        var printContents, popupWin;
+        printContents = document.getElementById('tablebillet').innerHTML;
+        popupWin = window.open('', '_blank', 'top=0,left=0,height=100%,width=auto');
+        popupWin.document.open();
+        popupWin.document.write("\n      <html>\n        <head>\n          <style>\n          .logo{\n  text-align: center; height: 10mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000\n}\n.logo{\n  text-align: center; height: 10mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000\n}\n.bankCode {\n  font-size: 5mm; font-family: arial, verdana; font-weight : bold;\n  font-style: italic; text-align: center; vertical-align: bottom;\n  padding-right: 1mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000\n}\n.bankCode2 {\n  font-size: 5mm; font-family: arial, verdana; font-weight : bold;\n  font-style: italic; text-align: center; vertical-align: bottom;\n  /*border-bottom: 1.2mm solid #000000; border-right: 1.2mm solid #000000;*/\n}\n.billetNumber {\n  font-size: 5mm; font-family: arial, verdana; font-weight : bold;\n  text-align: center; vertical-align: bottom; padding-bottom : 1mm;\n}\n.billetRightHeader {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; border-bottom: 1mm solid #000000\n}\n.billetRightHeader2 {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;\n}\n.billetRightField {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; border-left: 0.15mm solid #000000;\n}\n.billetLeftField2 {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; border-left: 0.15mm solid #000000;\n}\n.billetLeftField {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;\n}\n.billetLeftValue {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;\n}\n.billetLeftValue2 {\n  font-size: 3mm; font-family: arial, verdana; padding-left : 1mm;\n  text-align: center; font-weight: bold; border-left: 0.15mm solid #000000;\n  border-bottom: 0.15mm solid #000000;\n}\n.billetRightTextValue {\n  font-size: 3mm; font-family: arial, verdana; text-align:right;\n  padding-right: 1mm; font-weight: bold; border-left: 0.15mm solid #000000;\n  border-bottom: 0.15mm solid #000000;\n}\n.tr-border-bottom {\n  border-bottom: 0.15mm solid #000000;\n}\n\n</style>\n          <title>Comprovante</title>\n        </head>\n    <body onload=\"window.print();window.close()\">" + printContents + "</body>\n      </html>");
+        popupWin.document.close();
     };
     return BillsToPayComponent;
 }());

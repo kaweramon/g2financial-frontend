@@ -212,11 +212,6 @@ var RecurrentPaymentComponent = (function () {
             this.payment.RecurrentPayment.Interval = 'None';
         }
     };
-    RecurrentPaymentComponent.prototype.onChangeRecurrentInterval = function () {
-        if (this.payment.RecurrentPayment.Interval !== 'None') {
-            this.payment.Installments = 1;
-        }
-    };
     RecurrentPaymentComponent.prototype.getCurrentDate = function (format) {
         return moment().format(format);
     };
