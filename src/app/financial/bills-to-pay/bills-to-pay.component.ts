@@ -1,15 +1,15 @@
-import {Component} from '@angular/core';
+import {Component, ElementRef} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {BillToPayService} from './bill-to-pay.service';
 import {BillToPay} from './bill-to-pay';
 import * as moment from 'moment';
 import {Payment} from './payment';
-import {CreditCard} from './credit-card-payment/credit-card';
 import {TypeInterestChargeService} from '../type-interest-charge.service';
 import {TypeInterestCharge} from '../type-interest-charge';
 import {BillToPayPayment} from './bill-to-pay-payment';
 import {BilletShippingService} from './billet-payment/billet-shipping.service';
 import {BilletShipping} from './billet-payment/billet-shipping';
+import * as $ from 'jquery';
 
 @Component({
   selector: 'app-bills-to-pay',
@@ -38,7 +38,13 @@ export class BillsToPayComponent {
 
   public typeInterestCharge: TypeInterestCharge;
 
-  constructor(private route: ActivatedRoute, private service: BillToPayService,
+  public ourNumber: string = "";
+
+  public codeBar: string = "";
+
+  public billetShipping: BilletShipping;
+
+  constructor(private route: ActivatedRoute, private service: BillToPayService, private elementRef:ElementRef,
               private typeInterestService: TypeInterestChargeService, private billetShippingService: BilletShippingService) {
     this.payment = new Payment();
     //TODO: remover
@@ -50,7 +56,7 @@ export class BillsToPayComponent {
     });
     this.typeInterestService.getByType('MENSALIDADE').subscribe(result => {
       this.typeInterestCharge = result;
-    })
+    });
   }
 
   private getListBillToPayPayment(): void {
@@ -69,12 +75,16 @@ export class BillsToPayComponent {
   public payBills(): void {
     this.isPaymentSelected = true;
     this.listSelectedBillToPayPayment = [];
-    this.listBillToPayPayment.forEach(billToPayPayment => {
+    for (let i = 0; i < this.listBillToPayPayment.length; i++) {
+      let billToPayPayment = this.listBillToPayPayment[i];
       if (billToPayPayment.isChecked) {
         this.totalPayment += billToPayPayment.subTotal;
         this.listSelectedBillToPayPayment.push(billToPayPayment);
       }
-    });
+      if (i == this.listBillToPayPayment.length - 1) {
+        this.generateCodeBar();
+      }
+    }
   }
 
   public getConvertedDate(date: any) {
@@ -123,21 +133,18 @@ export class BillsToPayComponent {
   }
 
   public generateBillet(): void {
-    let billetShipping = new BilletShipping();
-    let ourNumber = "";
+    $('#btnGenerateBillet').prop('disabled', true);
     this.billetShippingService.getLastCounter().subscribe(result => {
       let nextCounter = result + 1;
-      billetShipping.counter = nextCounter;
-      console.log((12 - nextCounter.toString().length));
+      this.billetShipping = new BilletShipping();
+      this.billetShipping.counter = nextCounter;
       for (let i = 0; i < (12 - nextCounter.toString().length); i++) {
-        ourNumber += "0";
+        this.ourNumber += "0";
       }
-      ourNumber += nextCounter.toString();
-      console.log(ourNumber);
+      this.ourNumber += nextCounter.toString();
       //Calculo do digito Santander
-      let ourNumberArrayInverted = ourNumber.split("").reverse().join("");
+      let ourNumberArrayInverted = this.ourNumber.split("").reverse().join("");
       let total = 0;
-      console.log("inverted: " + ourNumberArrayInverted);
       for (let j = 0; j < ourNumberArrayInverted.length; j++) {
         if (j < 8) {
           total += (parseInt(ourNumberArrayInverted[j]) * (j + 2));
@@ -151,14 +158,16 @@ export class BillsToPayComponent {
           total += (parseInt(ourNumberArrayInverted[j]) * 5);
         }
       }
-      let rest = (total / 11).toString().split(".")[1].split("")[0];
+      let rest = "0";
+      if ((total / 11).toString().indexOf(".") !== -1) {
+        rest = (total / 11).toString().split(".")[1].split("")[0];
+      }
       let digit = 11 - parseInt(rest);
-      ourNumber += "-" + digit;
-      console.log(ourNumber);
-      billetShipping.ourNumber = ourNumber;
-      billetShipping.billValue = this.totalPayment;
-      billetShipping.clientId = this.route.snapshot.params["clientId"];
-      billetShipping.isCancel = false;
+      this.ourNumber += "-" + digit;
+      this.billetShipping.ourNumber = this.ourNumber;
+      this.billetShipping.billValue = this.totalPayment;
+      this.billetShipping.clientId = this.route.snapshot.params["clientId"];
+      this.billetShipping.isCancel = false;
       let paymentTypes = "";
       for (let i = 0; i < this.listSelectedBillToPayPayment.length; i++) {
         if (i < this.listSelectedBillToPayPayment.length - 1) {
@@ -167,16 +176,130 @@ export class BillsToPayComponent {
           paymentTypes += this.listSelectedBillToPayPayment[i].description;
         }
       }
-      billetShipping.chargingType = paymentTypes;
-      billetShipping.partialPayment = "NAO";
-      this.billetShippingService.create(billetShipping).subscribe(result => {
-        console.log(result);
+      this.billetShipping.chargingType = paymentTypes;
+      this.billetShipping.partialPayment = "NAO";
+      this.billetShipping.documentNumber = this.ourNumber.substring(
+        this.ourNumber.length - 7, this.ourNumber.length - 2);
+      this.billetShippingService.create(this.billetShipping).subscribe(result => {
+        console.log(JSON.stringify(result));
       }, error => {
         console.log(error);
-      })
+      });
+      this.generateQrBarCode();
     }, error => {
       console.log(error);
     });
+  }
+
+  private generateCodeBar(): void {
+    // Primeiro Grupo
+    let codeBarFirstGroup = "033998548";
+    let codeBarFirstGroupInverted = codeBarFirstGroup.split("").reverse().join("");
+    let total = 0;
+    for (let i = 0; i < codeBarFirstGroupInverted.length;i++) {
+      let currentNumber = parseInt(codeBarFirstGroupInverted[i]);
+      if (i == 4 && currentNumber == 9) {
+        total += currentNumber;
+      } else {
+        if (i % 2 == 0) {
+          if (currentNumber * 2 > 10) {
+            let firstDigit: number = parseInt((currentNumber * 2).toString().split("")[0].toString());
+            let secondDigit: number = parseInt((currentNumber * 2).toString().split("")[1].toString());
+            total += (firstDigit + secondDigit);
+          } else {
+            total += currentNumber * 2;
+          }
+        } else {
+          total += currentNumber;
+        }
+      }
+    }
+    let digitRest = parseInt((total / 10).toString().split(".")[1]);
+    codeBarFirstGroup += "." + (10 - digitRest);
+    // Segundo Grupo
+    let codeBarSecondGroup = "862" + this.ourNumber.substr(0, 7);
+    let codeBarSecondGroupInverted = codeBarSecondGroup.split("").reverse().join("");
+    let totalSecondGroup = 0;
+    for (let j = 0 ; j < codeBarSecondGroupInverted.length; j++) {
+      let currentNumber = parseInt(codeBarSecondGroupInverted[j]);
+      if (j % 2 == 0) {
+        totalSecondGroup += currentNumber * 2;
+      } else {
+        totalSecondGroup += currentNumber;
+      }
+    }
+    let digitRestSecondGroup = parseInt((totalSecondGroup / 10).toString().split(".")[1]);
+    codeBarSecondGroup += "." + (10 - digitRestSecondGroup);
+    //Terceiro Grupo
+    let codeBarThirdGroup = this.ourNumber.substr(7, 14);
+    codeBarThirdGroup = codeBarThirdGroup.replace(/-/g, "");
+    codeBarThirdGroup += "0101";
+    let codeBarThirdGroupInverted = codeBarThirdGroup.split("").reverse().join("");
+    let totalThirdGroup = 0;
+    for (let k = 0; k < codeBarThirdGroupInverted.length; k++) {
+      let currentNumberThirdGroup = parseInt(codeBarThirdGroupInverted[k]);
+      if (k % 2 == 0) {
+        totalThirdGroup += currentNumberThirdGroup * 2;
+      } else {
+        totalThirdGroup += currentNumberThirdGroup;
+      }
+    }
+    let restDigitThirdGroup = (totalThirdGroup / 10).toString().split(".")[1] !== undefined ?
+      parseInt((totalThirdGroup / 10).toString().split(".")[1]): 0;
+    restDigitThirdGroup = restDigitThirdGroup !== NaN ? restDigitThirdGroup: 0;
+    codeBarThirdGroup +=  "." + (10 - restDigitThirdGroup);
+    // Quarto Grupo - Digito Verificador
+    let factorMaturity = moment().diff(moment("1997-10-07"), 'days');
+    // Numero PSK (Codigo G2) = 8548862
+    // calcular valor nominal (10 digitos)
+    let valueStr = (this.totalPayment.toFixed(2)).replace(/([.*+?^$|(){}\[\]-])/mg, "");
+    let nominalValue = "";
+    for (let y = 0; y < (10 - valueStr.length); y++) {
+      nominalValue += "0";
+    }
+    nominalValue += valueStr;
+    let verifyDigitStr = "0339" + factorMaturity + nominalValue + "9" +
+      "8548862" + this.ourNumber + "0" + "101";
+    verifyDigitStr = verifyDigitStr.replace(/([.*+?^$|(){}\[\]-])/mg, "");
+    let verifyDigitStrInverted = verifyDigitStr.split("").reverse().join("");
+    let totalFourthGroup = 0;
+    let numberToCalc = 2;
+    for (let p = 0; p < verifyDigitStrInverted.length; p++) {
+      totalFourthGroup += parseInt(verifyDigitStrInverted[p]) * numberToCalc;
+      numberToCalc++;
+      if (p == 7 || p == 15 || p == 23 || p == 31 || p == 39) {
+        numberToCalc = 2;
+      }
+    }
+    console.log(totalFourthGroup);
+    let verifyDigit = ((totalFourthGroup * 10) / 11).toString().split(".")[1];
+    let numberVerifyDigit = 0;
+    console.log(verifyDigit);
+    if (verifyDigit !== undefined) {
+      if (verifyDigit.split("").length > 1) {
+        if (parseInt(verifyDigit.split("")[1]) > 5){
+          numberVerifyDigit = parseInt(verifyDigit.split("")[0]) + 1;
+        } else {
+          numberVerifyDigit = parseInt(verifyDigit.split("")[0]);
+        }
+      } else {
+        numberVerifyDigit = parseInt(verifyDigit.split("")[0]);
+      }
+    }
+    // Quinto Grupo -> Fator de Vencimento e Valor Nominal
+    let codeBarFifthGroup = factorMaturity + nominalValue;
+    this.codeBar = codeBarFirstGroup + " " + codeBarSecondGroup + " " + codeBarThirdGroup + " " + numberVerifyDigit + " " + codeBarFifthGroup;
+    console.log("Código de Barras: " + this.codeBar);
+  }
+
+  private generateQrBarCode(): void {
+    let s = document.createElement("script");
+    s.type = "text/javascript";
+    s.src = "src/app/financial/bills-to-pay/billet-payment/billet-barcode.js";
+    this.elementRef.nativeElement.appendChild(s);
+    setTimeout(() => {
+      this.printBillet();
+    }, 2000);
   }
 
   public printBillet(): void {

@@ -10,4 +10,9 @@ export class BilletShipping {
   public isCancel: boolean;
   public chargingType: string;
   public partialPayment: string;
+  public documentNumber: string;
+
+  constructor() {
+    this.ourNumber = "";
+  }
 }

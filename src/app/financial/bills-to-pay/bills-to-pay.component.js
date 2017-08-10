@@ -10,11 +10,13 @@ var core_1 = require("@angular/core");
 var moment = require("moment");
 var payment_1 = require("./payment");
 var billet_shipping_1 = require("./billet-payment/billet-shipping");
+var $ = require("jquery");
 var BillsToPayComponent = (function () {
-    function BillsToPayComponent(route, service, typeInterestService, billetShippingService) {
+    function BillsToPayComponent(route, service, elementRef, typeInterestService, billetShippingService) {
         var _this = this;
         this.route = route;
         this.service = service;
+        this.elementRef = elementRef;
         this.typeInterestService = typeInterestService;
         this.billetShippingService = billetShippingService;
         this.listBillToPayPayment = [];
@@ -24,6 +26,8 @@ var BillsToPayComponent = (function () {
         this.maskValidDate = [/[0-9]/, /\d/, '/', /\d/, /\d/, /\d/, /\d/];
         this.maskSecurityCode = [/[0-9]/, /\d/, /\d/];
         this.paymentMethod = '';
+        this.ourNumber = "";
+        this.codeBar = "";
         this.payment = new payment_1.Payment();
         //TODO: remover
         this.paymentMethod = 'BILLET';
@@ -50,15 +54,18 @@ var BillsToPayComponent = (function () {
         });
     };
     BillsToPayComponent.prototype.payBills = function () {
-        var _this = this;
         this.isPaymentSelected = true;
         this.listSelectedBillToPayPayment = [];
-        this.listBillToPayPayment.forEach(function (billToPayPayment) {
+        for (var i = 0; i < this.listBillToPayPayment.length; i++) {
+            var billToPayPayment = this.listBillToPayPayment[i];
             if (billToPayPayment.isChecked) {
-                _this.totalPayment += billToPayPayment.subTotal;
-                _this.listSelectedBillToPayPayment.push(billToPayPayment);
+                this.totalPayment += billToPayPayment.subTotal;
+                this.listSelectedBillToPayPayment.push(billToPayPayment);
             }
-        });
+            if (i == this.listBillToPayPayment.length - 1) {
+                this.generateCodeBar();
+            }
+        }
     };
     BillsToPayComponent.prototype.getConvertedDate = function (date) {
         return moment(date).add(1, 'd').format('DD/MM/YYYY');
@@ -105,21 +112,18 @@ var BillsToPayComponent = (function () {
     };
     BillsToPayComponent.prototype.generateBillet = function () {
         var _this = this;
-        var billetShipping = new billet_shipping_1.BilletShipping();
-        var ourNumber = "";
+        $('#btnGenerateBillet').prop('disabled', true);
         this.billetShippingService.getLastCounter().subscribe(function (result) {
             var nextCounter = result + 1;
-            billetShipping.counter = nextCounter;
-            console.log((12 - nextCounter.toString().length));
+            _this.billetShipping = new billet_shipping_1.BilletShipping();
+            _this.billetShipping.counter = nextCounter;
             for (var i = 0; i < (12 - nextCounter.toString().length); i++) {
-                ourNumber += "0";
+                _this.ourNumber += "0";
             }
-            ourNumber += nextCounter.toString();
-            console.log(ourNumber);
+            _this.ourNumber += nextCounter.toString();
             //Calculo do digito Santander
-            var ourNumberArrayInverted = ourNumber.split("").reverse().join("");
+            var ourNumberArrayInverted = _this.ourNumber.split("").reverse().join("");
             var total = 0;
-            console.log("inverted: " + ourNumberArrayInverted);
             for (var j = 0; j < ourNumberArrayInverted.length; j++) {
                 if (j < 8) {
                     total += (parseInt(ourNumberArrayInverted[j]) * (j + 2));
@@ -137,14 +141,16 @@ var BillsToPayComponent = (function () {
                     total += (parseInt(ourNumberArrayInverted[j]) * 5);
                 }
             }
-            var rest = (total / 11).toString().split(".")[1].split("")[0];
+            var rest = "0";
+            if ((total / 11).toString().indexOf(".") !== -1) {
+                rest = (total / 11).toString().split(".")[1].split("")[0];
+            }
             var digit = 11 - parseInt(rest);
-            ourNumber += "-" + digit;
-            console.log(ourNumber);
-            billetShipping.ourNumber = ourNumber;
-            billetShipping.billValue = _this.totalPayment;
-            billetShipping.clientId = _this.route.snapshot.params["clientId"];
-            billetShipping.isCancel = false;
+            _this.ourNumber += "-" + digit;
+            _this.billetShipping.ourNumber = _this.ourNumber;
+            _this.billetShipping.billValue = _this.totalPayment;
+            _this.billetShipping.clientId = _this.route.snapshot.params["clientId"];
+            _this.billetShipping.isCancel = false;
             var paymentTypes = "";
             for (var i = 0; i < _this.listSelectedBillToPayPayment.length; i++) {
                 if (i < _this.listSelectedBillToPayPayment.length - 1) {
@@ -154,16 +160,135 @@ var BillsToPayComponent = (function () {
                     paymentTypes += _this.listSelectedBillToPayPayment[i].description;
                 }
             }
-            billetShipping.chargingType = paymentTypes;
-            billetShipping.partialPayment = "NAO";
-            _this.billetShippingService.create(billetShipping).subscribe(function (result) {
-                console.log(result);
+            _this.billetShipping.chargingType = paymentTypes;
+            _this.billetShipping.partialPayment = "NAO";
+            _this.billetShipping.documentNumber = _this.ourNumber.substring(_this.ourNumber.length - 7, _this.ourNumber.length - 2);
+            _this.billetShippingService.create(_this.billetShipping).subscribe(function (result) {
+                console.log(JSON.stringify(result));
             }, function (error) {
                 console.log(error);
             });
+            _this.generateQrBarCode();
         }, function (error) {
             console.log(error);
         });
+    };
+    BillsToPayComponent.prototype.generateCodeBar = function () {
+        // Primeiro Grupo
+        var codeBarFirstGroup = "033998548";
+        var codeBarFirstGroupInverted = codeBarFirstGroup.split("").reverse().join("");
+        var total = 0;
+        for (var i = 0; i < codeBarFirstGroupInverted.length; i++) {
+            var currentNumber = parseInt(codeBarFirstGroupInverted[i]);
+            if (i == 4 && currentNumber == 9) {
+                total += currentNumber;
+            }
+            else {
+                if (i % 2 == 0) {
+                    if (currentNumber * 2 > 10) {
+                        var firstDigit = parseInt((currentNumber * 2).toString().split("")[0].toString());
+                        var secondDigit = parseInt((currentNumber * 2).toString().split("")[1].toString());
+                        total += (firstDigit + secondDigit);
+                    }
+                    else {
+                        total += currentNumber * 2;
+                    }
+                }
+                else {
+                    total += currentNumber;
+                }
+            }
+        }
+        var digitRest = parseInt((total / 10).toString().split(".")[1]);
+        codeBarFirstGroup += "." + (10 - digitRest);
+        // Segundo Grupo
+        var codeBarSecondGroup = "862" + this.ourNumber.substr(0, 7);
+        var codeBarSecondGroupInverted = codeBarSecondGroup.split("").reverse().join("");
+        var totalSecondGroup = 0;
+        for (var j = 0; j < codeBarSecondGroupInverted.length; j++) {
+            var currentNumber = parseInt(codeBarSecondGroupInverted[j]);
+            if (j % 2 == 0) {
+                totalSecondGroup += currentNumber * 2;
+            }
+            else {
+                totalSecondGroup += currentNumber;
+            }
+        }
+        var digitRestSecondGroup = parseInt((totalSecondGroup / 10).toString().split(".")[1]);
+        codeBarSecondGroup += "." + (10 - digitRestSecondGroup);
+        //Terceiro Grupo
+        var codeBarThirdGroup = this.ourNumber.substr(7, 14);
+        codeBarThirdGroup = codeBarThirdGroup.replace(/-/g, "");
+        codeBarThirdGroup += "0101";
+        var codeBarThirdGroupInverted = codeBarThirdGroup.split("").reverse().join("");
+        var totalThirdGroup = 0;
+        for (var k = 0; k < codeBarThirdGroupInverted.length; k++) {
+            var currentNumberThirdGroup = parseInt(codeBarThirdGroupInverted[k]);
+            if (k % 2 == 0) {
+                totalThirdGroup += currentNumberThirdGroup * 2;
+            }
+            else {
+                totalThirdGroup += currentNumberThirdGroup;
+            }
+        }
+        var restDigitThirdGroup = (totalThirdGroup / 10).toString().split(".")[1] !== undefined ?
+            parseInt((totalThirdGroup / 10).toString().split(".")[1]) : 0;
+        restDigitThirdGroup = restDigitThirdGroup !== NaN ? restDigitThirdGroup : 0;
+        codeBarThirdGroup += "." + (10 - restDigitThirdGroup);
+        // Quarto Grupo - Digito Verificador
+        var factorMaturity = moment().diff(moment("1997-10-07"), 'days');
+        // Numero PSK (Codigo G2) = 8548862
+        // calcular valor nominal (10 digitos)
+        var valueStr = (this.totalPayment.toFixed(2)).replace(/([.*+?^$|(){}\[\]-])/mg, "");
+        var nominalValue = "";
+        for (var y = 0; y < (10 - valueStr.length); y++) {
+            nominalValue += "0";
+        }
+        nominalValue += valueStr;
+        var verifyDigitStr = "0339" + factorMaturity + nominalValue + "9" +
+            "8548862" + this.ourNumber + "0" + "101";
+        verifyDigitStr = verifyDigitStr.replace(/([.*+?^$|(){}\[\]-])/mg, "");
+        var verifyDigitStrInverted = verifyDigitStr.split("").reverse().join("");
+        var totalFourthGroup = 0;
+        var numberToCalc = 2;
+        for (var p = 0; p < verifyDigitStrInverted.length; p++) {
+            totalFourthGroup += parseInt(verifyDigitStrInverted[p]) * numberToCalc;
+            numberToCalc++;
+            if (p == 7 || p == 15 || p == 23 || p == 31 || p == 39) {
+                numberToCalc = 2;
+            }
+        }
+        console.log(totalFourthGroup);
+        var verifyDigit = ((totalFourthGroup * 10) / 11).toString().split(".")[1];
+        var numberVerifyDigit = 0;
+        console.log(verifyDigit);
+        if (verifyDigit !== undefined) {
+            if (verifyDigit.split("").length > 1) {
+                if (parseInt(verifyDigit.split("")[1]) > 5) {
+                    numberVerifyDigit = parseInt(verifyDigit.split("")[0]) + 1;
+                }
+                else {
+                    numberVerifyDigit = parseInt(verifyDigit.split("")[0]);
+                }
+            }
+            else {
+                numberVerifyDigit = parseInt(verifyDigit.split("")[0]);
+            }
+        }
+        // Quinto Grupo -> Fator de Vencimento e Valor Nominal
+        var codeBarFifthGroup = factorMaturity + nominalValue;
+        this.codeBar = codeBarFirstGroup + " " + codeBarSecondGroup + " " + codeBarThirdGroup + " " + numberVerifyDigit + " " + codeBarFifthGroup;
+        console.log("Código de Barras: " + this.codeBar);
+    };
+    BillsToPayComponent.prototype.generateQrBarCode = function () {
+        var _this = this;
+        var s = document.createElement("script");
+        s.type = "text/javascript";
+        s.src = "src/app/financial/bills-to-pay/billet-payment/billet-barcode.js";
+        this.elementRef.nativeElement.appendChild(s);
+        setTimeout(function () {
+            _this.printBillet();
+        }, 2000);
     };
     BillsToPayComponent.prototype.printBillet = function () {
         // tablebillet

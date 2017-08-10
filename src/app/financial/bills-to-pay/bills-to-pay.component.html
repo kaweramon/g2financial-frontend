@@ -32,7 +32,7 @@
     <img src="http://cielohlg.sensedia.com/api-portal/sites/default/files/selo4.png" style="cursor: pointer" (click)="payBills()" />
   </div>
   <div class="col-lg-3 col-md-3" *ngIf="!isPaymentSelected">
-    <img src="https://cta2t.com.br/site/wp-content/uploads/2015/02/pagar-agora.png"
+    <img src="src/assets/images/pagar-agora.png"
          class="img-responsive" alt="" style="margin-top: 25px; cursor: pointer" (click)="payBills()">
   </div>
 </div>
@@ -89,7 +89,7 @@
     </select>
   </div>
   <div class="col-lg-8 col-md-8" *ngIf="isPaymentSelected && paymentMethod === 'BILLET'">
-    <button class="btn btn-primary pull-right" (click)="generateBillet()" style="margin-top: 25px;">Gerar Boleto</button>
+    <button class="btn btn-primary pull-right" id="btnGenerateBillet" (click)="generateBillet()" style="margin-top: 25px;">Gerar Boleto</button>
   </div>
 </div>
 
@@ -103,6 +103,7 @@
   </div>
 
   <div *ngIf="paymentMethod === 'BILLET' && isPaymentSelected">
-    <app-billet-payment [totalPayment]="totalPayment"></app-billet-payment>
+    <app-billet-payment [codeBar]="codeBar" [billetShipping]="billetShipping"
+                        [totalPayment]="totalPayment"></app-billet-payment>
   </div>
 </div>
