@@ -16,11 +16,10 @@ var PaidBillsComponent = (function () {
         this.listBillToPayPayment = [];
     }
     PaidBillsComponent.prototype.ngOnInit = function () {
-        var _this = this;
-        this.service.listByClientId(this.route.snapshot.params['clientId'], "SIM").subscribe(function (result) {
-            _this.listPaidBills = result;
-            _this.getListBillToPayPayment();
-        });
+        /*this.service.listByClientId(this.route.snapshot.params['clientId'], "SIM").subscribe(result => {
+          this.listPaidBills = result;
+          this.getListBillToPayPayment();
+        });*/
     };
     PaidBillsComponent.prototype.getListBillToPayPayment = function () {
         var _this = this;

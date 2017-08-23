@@ -15,9 +15,9 @@
           'bg-info': billToPayPayment.dateStatus === 'IS_SAME'}">
         <td class="text-center">{{getConvertedDate(billToPayPayment.maturity)}}</td>
         <td class="text-left">{{billToPayPayment.description}}</td>
-        <td class="text-center">R$ {{billToPayPayment.amount}}</td>
+        <td class="text-center">R$ {{billToPayPayment.billetValue}}</td>
         <td class="text-center">
-          <input type="checkbox" [(ngModel)]="billToPayPayment.isChecked">
+          <span (click)="generateBillet(billToPayPayment.id)" class="fa fa-file-text-o"></span>
         </td>
       </tr>
     </tbody>
@@ -27,7 +27,7 @@
                        (pageChange)="page = $event">
   </pagination-controls>
 </div>
-<div class="row">
+<!--<div class="row">
   <div class="col-lg-9 col-md-9"  *ngIf="!isPaymentSelected">
     <img src="http://cielohlg.sensedia.com/api-portal/sites/default/files/selo4.png" style="cursor: pointer" (click)="payBills()" />
   </div>
@@ -35,7 +35,7 @@
     <img src="src/assets/images/pagar-agora.png"
          class="img-responsive" alt="" style="margin-top: 25px; cursor: pointer" (click)="payBills()">
   </div>
-</div>
+</div>-->
 
 <div class="row">
   <div class="col-lg-12 col-md-12" *ngIf="isPaymentSelected">
@@ -93,7 +93,7 @@
   </div>
 </div>
 
-<div class="row" *ngIf="listSelectedBillToPayPayment.length > 0">
+<div class="row">
   <div *ngIf="paymentMethod === 'DEBIT' && isPaymentSelected">
     <app-debit-card-payment [totalPayment]="totalPayment"></app-debit-card-payment>
   </div>
@@ -102,7 +102,7 @@
     <app-recurrent-payment [listBillToPayPayment]="listSelectedBillToPayPayment" [totalPayment]="totalPayment"></app-recurrent-payment>
   </div>
 
-  <div *ngIf="paymentMethod === 'BILLET' && isPaymentSelected">
+  <div>
     <app-billet-payment [codeBar]="codeBar" [billetShipping]="billetShipping"
                         [totalPayment]="totalPayment"></app-billet-payment>
   </div>

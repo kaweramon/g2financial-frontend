@@ -19,6 +19,7 @@ export class BillToPayPayment {
   public subTotal: number;
   public daysInArrears: number;
   public dateStatus: string;
+  public billetValue: number;
 
   constructor() {
     this.amount = 0.0;

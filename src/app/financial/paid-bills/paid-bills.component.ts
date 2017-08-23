@@ -19,10 +19,10 @@ export class PaidBillsComponent implements OnInit {
   public page: any;
 
   ngOnInit() {
-    this.service.listByClientId(this.route.snapshot.params['clientId'], "SIM").subscribe(result => {
+    /*this.service.listByClientId(this.route.snapshot.params['clientId'], "SIM").subscribe(result => {
       this.listPaidBills = result;
       this.getListBillToPayPayment();
-    });
+    });*/
   }
 
   private getListBillToPayPayment(): void {

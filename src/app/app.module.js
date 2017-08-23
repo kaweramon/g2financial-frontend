@@ -32,6 +32,7 @@ var bill_to_pay_payment_service_1 = require("./financial/bills-to-pay/bill-to-pa
 var cielo_payment_service_1 = require("./financial/bills-to-pay/cielo-payment.service");
 var ng2_slim_loading_bar_1 = require("ng2-slim-loading-bar");
 var billet_shipping_service_1 = require("./financial/bills-to-pay/billet-payment/billet-shipping.service");
+var bank_service_1 = require("./financial/bills-to-pay/billet-payment/bank.service");
 var AppModule = (function () {
     function AppModule() {
     }
@@ -63,7 +64,7 @@ AppModule = __decorate([
             ngx_bootstrap_1.ModalModule.forRoot()
         ],
         providers: [client_service_1.ClientService, bill_to_pay_service_1.BillToPayService, type_interest_charge_service_1.TypeInterestChargeService, bill_to_pay_amounts_paid_service_1.BillToPayAmountsPaidService,
-            bill_to_pay_payment_service_1.BillToPayPaymentService, cielo_payment_service_1.CieloPaymentService, billet_shipping_service_1.BilletShippingService],
+            bill_to_pay_payment_service_1.BillToPayPaymentService, cielo_payment_service_1.CieloPaymentService, billet_shipping_service_1.BilletShippingService, bank_service_1.BankService],
         bootstrap: [app_component_1.AppComponent]
     })
 ], AppModule);

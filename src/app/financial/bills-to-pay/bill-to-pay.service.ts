@@ -14,9 +14,10 @@ export class BillToPayService {
 
   constructor(private http: Http) { }
 
-  public listByClientId(clientId: number, isBillToPay: string): Observable<BillToPay[]> {
+  public listByClientId(clientId: number, isBillToPay: string, bankId: number): Observable<BillToPay[]> {
     this.params.set('clientId', clientId.toString());
     this.params.set('isBillToPay', isBillToPay);
+    this.params.set('bankId', bankId.toString());
     return this.http.get(this.urlBillToPay + clientId, {headers: this.headers, search: this.params}).map(res => res.json());
   }
 

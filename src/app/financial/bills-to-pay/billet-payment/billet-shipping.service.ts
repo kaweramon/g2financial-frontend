@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {Headers, Http} from '@angular/http';
+import {Headers, Http, URLSearchParams} from '@angular/http';
 import {BilletShipping} from './billet-shipping';
 import {Observable} from 'rxjs/Observable';
 
@@ -8,6 +8,7 @@ export class BilletShippingService {
 
   private urlBilletShipping = 'http://localhost:8080/billet-shipping/';
   headers = new Headers({ 'Content-Type': 'application/json' });
+  params: URLSearchParams = new URLSearchParams();
 
   constructor(private http: Http) { }
 
@@ -19,4 +20,8 @@ export class BilletShippingService {
     return this.http.get(this.urlBilletShipping + "last", {headers: this.headers}).map(res => res.json());
   }
 
+  public getByCounter(counter: number): Observable<BilletShipping> {
+    this.params.set('counter', counter.toString());
+    return this.http.get(this.urlBilletShipping + counter, {headers: this.headers, search: this.params}).map(res => res.json());
+  }
 }

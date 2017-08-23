@@ -9,16 +9,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
 var moment = require("moment");
 var payment_1 = require("./payment");
-var billet_shipping_1 = require("./billet-payment/billet-shipping");
-var $ = require("jquery");
 var BillsToPayComponent = (function () {
-    function BillsToPayComponent(route, service, elementRef, typeInterestService, billetShippingService) {
+    function BillsToPayComponent(route, service, elementRef, typeInterestService, billetShippingService, bankService) {
         var _this = this;
         this.route = route;
         this.service = service;
         this.elementRef = elementRef;
         this.typeInterestService = typeInterestService;
         this.billetShippingService = billetShippingService;
+        this.bankService = bankService;
         this.listBillToPayPayment = [];
         this.listSelectedBillToPayPayment = [];
         this.isPaymentSelected = false;
@@ -32,9 +31,12 @@ var BillsToPayComponent = (function () {
         //TODO: remover
         this.paymentMethod = 'BILLET';
         // this.isPaymentSelected = true;
-        this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(function (result) {
-            _this.listBillToPay = result;
-            _this.getListBillToPayPayment();
+        this.bankService.getByBankNamRem("SANTANDER").subscribe(function (result) {
+            console.log(result);
+            _this.service.listByClientId(_this.route.snapshot.params["clientId"], 'NAO', result.id).subscribe(function (result) {
+                _this.listBillToPay = result;
+                _this.getListBillToPayPayment();
+            });
         });
         this.typeInterestService.getByType('MENSALIDADE').subscribe(function (result) {
             _this.typeInterestCharge = result;
@@ -63,7 +65,7 @@ var BillsToPayComponent = (function () {
                 this.listSelectedBillToPayPayment.push(billToPayPayment);
             }
             if (i == this.listBillToPayPayment.length - 1) {
-                this.generateCodeBar();
+                // this.generateCodeBar();
             }
         }
     };
@@ -110,70 +112,80 @@ var BillsToPayComponent = (function () {
             billToPayment.subTotal = billToPayment.amount;
         }
     };
-    BillsToPayComponent.prototype.generateBillet = function () {
+    BillsToPayComponent.prototype.generateBillet = function (billToPayPaymentSelectedId) {
         var _this = this;
-        $('#btnGenerateBillet').prop('disabled', true);
-        this.billetShippingService.getLastCounter().subscribe(function (result) {
-            var nextCounter = result + 1;
-            _this.billetShipping = new billet_shipping_1.BilletShipping();
-            _this.billetShipping.counter = nextCounter;
-            for (var i = 0; i < (12 - nextCounter.toString().length); i++) {
-                _this.ourNumber += "0";
-            }
-            _this.ourNumber += nextCounter.toString();
-            //Calculo do digito Santander
-            var ourNumberArrayInverted = _this.ourNumber.split("").reverse().join("");
-            var total = 0;
-            for (var j = 0; j < ourNumberArrayInverted.length; j++) {
-                if (j < 8) {
-                    total += (parseInt(ourNumberArrayInverted[j]) * (j + 2));
-                }
-                else if (j === 8) {
-                    total += (parseInt(ourNumberArrayInverted[j]) * 2);
-                }
-                else if (j === 9) {
-                    total += (parseInt(ourNumberArrayInverted[j]) * 3);
-                }
-                else if (j === 10) {
-                    total += (parseInt(ourNumberArrayInverted[j]) * 4);
-                }
-                else if (j === 11) {
-                    total += (parseInt(ourNumberArrayInverted[j]) * 5);
+        this.billetShippingService.getByCounter(billToPayPaymentSelectedId).subscribe(function (result) {
+            _this.billetShipping = result;
+            console.log(result);
+            var ourNumberArray = _this.billetShipping.ourNumber.split("");
+            for (var i = 0; i < ourNumberArray.length; i++) {
+                if (_this.billetShipping.ourNumber.charAt(i) !== "0") {
+                    _this.billetShipping.documentNumber = _this.billetShipping.ourNumber.substr(i, (_this.billetShipping.ourNumber.length - 2));
+                    break;
                 }
             }
-            var rest = "0";
-            if ((total / 11).toString().indexOf(".") !== -1) {
-                rest = (total / 11).toString().split(".")[1].split("")[0];
-            }
-            var digit = 11 - parseInt(rest);
-            _this.ourNumber += "-" + digit;
-            _this.billetShipping.ourNumber = _this.ourNumber;
-            _this.billetShipping.billValue = _this.totalPayment;
-            _this.billetShipping.clientId = _this.route.snapshot.params["clientId"];
-            _this.billetShipping.isCancel = false;
-            var paymentTypes = "";
-            for (var i = 0; i < _this.listSelectedBillToPayPayment.length; i++) {
-                if (i < _this.listSelectedBillToPayPayment.length - 1) {
-                    paymentTypes += _this.listSelectedBillToPayPayment[i].description + ", ";
+            console.log(_this.billetShipping.documentNumber);
+            _this.billetShippingService.getLastCounter().subscribe(function (result) {
+                var nextCounter = result + 1;
+                _this.billetShipping.counter = nextCounter;
+                for (var i = 0; i < (12 - nextCounter.toString().length); i++) {
+                    _this.ourNumber += "0";
                 }
-                else {
-                    paymentTypes += _this.listSelectedBillToPayPayment[i].description;
+                _this.ourNumber += nextCounter.toString();
+                //Calculo do digito Santander
+                var ourNumberArrayInverted = _this.ourNumber.split("").reverse().join("");
+                var total = 0;
+                for (var j = 0; j < ourNumberArrayInverted.length; j++) {
+                    if (j < 8) {
+                        total += (parseInt(ourNumberArrayInverted[j]) * (j + 2));
+                    }
+                    else if (j === 8) {
+                        total += (parseInt(ourNumberArrayInverted[j]) * 2);
+                    }
+                    else if (j === 9) {
+                        total += (parseInt(ourNumberArrayInverted[j]) * 3);
+                    }
+                    else if (j === 10) {
+                        total += (parseInt(ourNumberArrayInverted[j]) * 4);
+                    }
+                    else if (j === 11) {
+                        total += (parseInt(ourNumberArrayInverted[j]) * 5);
+                    }
                 }
-            }
-            _this.billetShipping.chargingType = paymentTypes;
-            _this.billetShipping.partialPayment = "NAO";
-            _this.billetShipping.documentNumber = _this.ourNumber.substring(_this.ourNumber.length - 7, _this.ourNumber.length - 2);
-            _this.billetShippingService.create(_this.billetShipping).subscribe(function (result) {
-                console.log(JSON.stringify(result));
+                var rest = "0";
+                if ((total / 11).toString().indexOf(".") !== -1) {
+                    rest = (total / 11).toString().split(".")[1].split("")[0];
+                }
+                var digit = 11 - parseInt(rest);
+                // this.ourNumber += "-" + digit;
+                _this.billetShipping.ourNumber += "-" + digit;
+                // this.billetShipping.billValue = this.totalPayment;
+                _this.billetShipping.clientId = _this.route.snapshot.params["clientId"];
+                // this.billetShipping.isCancel = false;
+                var paymentTypes = "";
+                for (var i = 0; i < _this.listSelectedBillToPayPayment.length; i++) {
+                    if (i < _this.listSelectedBillToPayPayment.length - 1) {
+                        paymentTypes += _this.listSelectedBillToPayPayment[i].description + ", ";
+                    }
+                    else {
+                        paymentTypes += _this.listSelectedBillToPayPayment[i].description;
+                    }
+                }
+                _this.billetShipping.chargingType = paymentTypes;
+                _this.billetShipping.documentNumber = _this.ourNumber.substring(_this.ourNumber.length - 7, _this.ourNumber.length - 2);
+                console.log(_this.billetShipping.billValue);
+                _this.generateCodeBar(_this.generateQrBarCode());
+                setTimeout(function () {
+                    _this.printBillet();
+                }, 2000);
             }, function (error) {
                 console.log(error);
             });
-            _this.generateQrBarCode();
-        }, function (error) {
-            console.log(error);
         });
+        /*$('#btnGenerateBillet').prop('disabled', true);
+        */
     };
-    BillsToPayComponent.prototype.generateCodeBar = function () {
+    BillsToPayComponent.prototype.generateCodeBar = function (callback) {
         // Primeiro Grupo
         var codeBarFirstGroup = "033998548";
         var codeBarFirstGroupInverted = codeBarFirstGroup.split("").reverse().join("");
@@ -277,18 +289,19 @@ var BillsToPayComponent = (function () {
         }
         // Quinto Grupo -> Fator de Vencimento e Valor Nominal
         var codeBarFifthGroup = factorMaturity + nominalValue;
-        this.codeBar = codeBarFirstGroup + " " + codeBarSecondGroup + " " + codeBarThirdGroup + " " + numberVerifyDigit + " " + codeBarFifthGroup;
-        console.log("Código de Barras: " + this.codeBar);
+        this.billetShipping.codeBar = codeBarFirstGroup + " " + codeBarSecondGroup + " " + codeBarThirdGroup + " " + numberVerifyDigit + " " + codeBarFifthGroup;
+        console.log("Código de Barras: " + this.billetShipping.codeBar);
+        // setTimeout(() => {
+        if (callback) {
+            callback();
+        }
+        // }, 2000);
     };
     BillsToPayComponent.prototype.generateQrBarCode = function () {
-        var _this = this;
         var s = document.createElement("script");
         s.type = "text/javascript";
         s.src = "src/app/financial/bills-to-pay/billet-payment/billet-barcode.js";
         this.elementRef.nativeElement.appendChild(s);
-        setTimeout(function () {
-            _this.printBillet();
-        }, 2000);
     };
     BillsToPayComponent.prototype.printBillet = function () {
         // tablebillet

@@ -11,6 +11,7 @@ export class BilletShipping {
   public chargingType: string;
   public partialPayment: string;
   public documentNumber: string;
+  public codeBar: string;
 
   constructor() {
     this.ourNumber = "";

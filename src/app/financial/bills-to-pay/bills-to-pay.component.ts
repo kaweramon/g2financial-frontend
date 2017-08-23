@@ -9,7 +9,7 @@ import {TypeInterestCharge} from '../type-interest-charge';
 import {BillToPayPayment} from './bill-to-pay-payment';
 import {BilletShippingService} from './billet-payment/billet-shipping.service';
 import {BilletShipping} from './billet-payment/billet-shipping';
-import * as $ from 'jquery';
+import {BankService} from './billet-payment/bank.service';
 
 @Component({
   selector: 'app-bills-to-pay',
@@ -45,14 +45,19 @@ export class BillsToPayComponent {
   public billetShipping: BilletShipping;
 
   constructor(private route: ActivatedRoute, private service: BillToPayService, private elementRef:ElementRef,
-              private typeInterestService: TypeInterestChargeService, private billetShippingService: BilletShippingService) {
+              private typeInterestService: TypeInterestChargeService,
+              private billetShippingService: BilletShippingService,
+              private bankService: BankService) {
     this.payment = new Payment();
     //TODO: remover
     this.paymentMethod = 'BILLET';
     // this.isPaymentSelected = true;
-    this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(result => {
-      this.listBillToPay = result;
-      this.getListBillToPayPayment();
+    this.bankService.getByBankNamRem("SANTANDER").subscribe(result => {
+      console.log(result);
+      this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO', result.id).subscribe(result => {
+        this.listBillToPay = result;
+        this.getListBillToPayPayment();
+      });
     });
     this.typeInterestService.getByType('MENSALIDADE').subscribe(result => {
       this.typeInterestCharge = result;
@@ -82,7 +87,7 @@ export class BillsToPayComponent {
         this.listSelectedBillToPayPayment.push(billToPayPayment);
       }
       if (i == this.listBillToPayPayment.length - 1) {
-        this.generateCodeBar();
+        // this.generateCodeBar();
       }
     }
   }
@@ -132,66 +137,79 @@ export class BillsToPayComponent {
     }
   }
 
-  public generateBillet(): void {
-    $('#btnGenerateBillet').prop('disabled', true);
-    this.billetShippingService.getLastCounter().subscribe(result => {
-      let nextCounter = result + 1;
-      this.billetShipping = new BilletShipping();
-      this.billetShipping.counter = nextCounter;
-      for (let i = 0; i < (12 - nextCounter.toString().length); i++) {
-        this.ourNumber += "0";
-      }
-      this.ourNumber += nextCounter.toString();
-      //Calculo do digito Santander
-      let ourNumberArrayInverted = this.ourNumber.split("").reverse().join("");
-      let total = 0;
-      for (let j = 0; j < ourNumberArrayInverted.length; j++) {
-        if (j < 8) {
-          total += (parseInt(ourNumberArrayInverted[j]) * (j + 2));
-        } else if (j === 8) {
-          total += (parseInt(ourNumberArrayInverted[j]) * 2);
-        } else if (j === 9) {
-          total += (parseInt(ourNumberArrayInverted[j]) * 3);
-        } else if (j === 10) {
-          total += (parseInt(ourNumberArrayInverted[j]) * 4);
-        } else if (j === 11) {
-          total += (parseInt(ourNumberArrayInverted[j]) * 5);
+  public generateBillet(billToPayPaymentSelectedId: number): void {
+    this.billetShippingService.getByCounter(billToPayPaymentSelectedId).subscribe(result => {
+      this.billetShipping = result;
+      console.log(result);
+      let ourNumberArray = this.billetShipping.ourNumber.split("");
+      for (let i = 0; i < ourNumberArray.length; i++) {
+        if (this.billetShipping.ourNumber.charAt(i) !== "0") {
+          this.billetShipping.documentNumber = this.billetShipping.ourNumber.substr(
+           i, (this.billetShipping.ourNumber.length - 2));
+          break;
         }
       }
-      let rest = "0";
-      if ((total / 11).toString().indexOf(".") !== -1) {
-        rest = (total / 11).toString().split(".")[1].split("")[0];
-      }
-      let digit = 11 - parseInt(rest);
-      this.ourNumber += "-" + digit;
-      this.billetShipping.ourNumber = this.ourNumber;
-      this.billetShipping.billValue = this.totalPayment;
-      this.billetShipping.clientId = this.route.snapshot.params["clientId"];
-      this.billetShipping.isCancel = false;
-      let paymentTypes = "";
-      for (let i = 0; i < this.listSelectedBillToPayPayment.length; i++) {
-        if (i < this.listSelectedBillToPayPayment.length - 1) {
-          paymentTypes += this.listSelectedBillToPayPayment[i].description + ", ";
-        } else {
-          paymentTypes += this.listSelectedBillToPayPayment[i].description;
+      console.log(this.billetShipping.documentNumber);
+      this.billetShippingService.getLastCounter().subscribe(result => {
+
+        let nextCounter = result + 1;
+        this.billetShipping.counter = nextCounter;
+        for (let i = 0; i < (12 - nextCounter.toString().length); i++) {
+          this.ourNumber += "0";
         }
-      }
-      this.billetShipping.chargingType = paymentTypes;
-      this.billetShipping.partialPayment = "NAO";
-      this.billetShipping.documentNumber = this.ourNumber.substring(
-        this.ourNumber.length - 7, this.ourNumber.length - 2);
-      this.billetShippingService.create(this.billetShipping).subscribe(result => {
-        console.log(JSON.stringify(result));
+        this.ourNumber += nextCounter.toString();
+        //Calculo do digito Santander
+        let ourNumberArrayInverted = this.ourNumber.split("").reverse().join("");
+        let total = 0;
+        for (let j = 0; j < ourNumberArrayInverted.length; j++) {
+          if (j < 8) {
+            total += (parseInt(ourNumberArrayInverted[j]) * (j + 2));
+          } else if (j === 8) {
+            total += (parseInt(ourNumberArrayInverted[j]) * 2);
+          } else if (j === 9) {
+            total += (parseInt(ourNumberArrayInverted[j]) * 3);
+          } else if (j === 10) {
+            total += (parseInt(ourNumberArrayInverted[j]) * 4);
+          } else if (j === 11) {
+            total += (parseInt(ourNumberArrayInverted[j]) * 5);
+          }
+        }
+        let rest = "0";
+        if ((total / 11).toString().indexOf(".") !== -1) {
+          rest = (total / 11).toString().split(".")[1].split("")[0];
+        }
+        let digit = 11 - parseInt(rest);
+        // this.ourNumber += "-" + digit;
+        this.billetShipping.ourNumber+= "-" + digit;
+        // this.billetShipping.billValue = this.totalPayment;
+        this.billetShipping.clientId = this.route.snapshot.params["clientId"];
+        // this.billetShipping.isCancel = false;
+        let paymentTypes = "";
+        for (let i = 0; i < this.listSelectedBillToPayPayment.length; i++) {
+          if (i < this.listSelectedBillToPayPayment.length - 1) {
+            paymentTypes += this.listSelectedBillToPayPayment[i].description + ", ";
+          } else {
+            paymentTypes += this.listSelectedBillToPayPayment[i].description;
+          }
+        }
+        this.billetShipping.chargingType = paymentTypes;
+        this.billetShipping.documentNumber = this.ourNumber.substring(
+          this.ourNumber.length - 7, this.ourNumber.length - 2);
+        console.log(this.billetShipping.billValue);
+        this.generateCodeBar(this.generateQrBarCode());
+        setTimeout(() => {
+          this.printBillet();
+        }, 2000);
       }, error => {
         console.log(error);
       });
-      this.generateQrBarCode();
-    }, error => {
-      console.log(error);
+
     });
+    /*$('#btnGenerateBillet').prop('disabled', true);
+    */
   }
 
-  private generateCodeBar(): void {
+  private generateCodeBar(callback): void {
     // Primeiro Grupo
     let codeBarFirstGroup = "033998548";
     let codeBarFirstGroupInverted = codeBarFirstGroup.split("").reverse().join("");
@@ -288,8 +306,13 @@ export class BillsToPayComponent {
     }
     // Quinto Grupo -> Fator de Vencimento e Valor Nominal
     let codeBarFifthGroup = factorMaturity + nominalValue;
-    this.codeBar = codeBarFirstGroup + " " + codeBarSecondGroup + " " + codeBarThirdGroup + " " + numberVerifyDigit + " " + codeBarFifthGroup;
-    console.log("Código de Barras: " + this.codeBar);
+    this.billetShipping.codeBar = codeBarFirstGroup + " " + codeBarSecondGroup + " " + codeBarThirdGroup + " " + numberVerifyDigit + " " + codeBarFifthGroup;
+    console.log("Código de Barras: " + this.billetShipping.codeBar);
+    // setTimeout(() => {
+      if (callback) {
+        callback();
+      }
+    // }, 2000);
   }
 
   private generateQrBarCode(): void {
@@ -297,9 +320,6 @@ export class BillsToPayComponent {
     s.type = "text/javascript";
     s.src = "src/app/financial/bills-to-pay/billet-payment/billet-barcode.js";
     this.elementRef.nativeElement.appendChild(s);
-    setTimeout(() => {
-      this.printBillet();
-    }, 2000);
   }
 
   public printBillet(): void {

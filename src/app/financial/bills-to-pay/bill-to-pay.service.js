@@ -17,9 +17,10 @@ var BillToPayService = (function () {
         this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
         this.params = new http_1.URLSearchParams();
     }
-    BillToPayService.prototype.listByClientId = function (clientId, isBillToPay) {
+    BillToPayService.prototype.listByClientId = function (clientId, isBillToPay, bankId) {
         this.params.set('clientId', clientId.toString());
         this.params.set('isBillToPay', isBillToPay);
+        this.params.set('bankId', bankId.toString());
         return this.http.get(this.urlBillToPay + clientId, { headers: this.headers, search: this.params }).map(function (res) { return res.json(); });
     };
     BillToPayService.prototype.paymentCreditCard = function (payment) {
