@@ -53,7 +53,6 @@ export class BillsToPayComponent {
     this.paymentMethod = 'BILLET';
     // this.isPaymentSelected = true;
     this.bankService.getByBankNamRem("SANTANDER").subscribe(result => {
-      console.log(result);
       this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO', result.id).subscribe(result => {
         this.listBillToPay = result;
         this.getListBillToPayPayment();
@@ -140,7 +139,6 @@ export class BillsToPayComponent {
   public generateBillet(billToPayPaymentSelectedId: number): void {
     this.billetShippingService.getByCounter(billToPayPaymentSelectedId).subscribe(result => {
       this.billetShipping = result;
-      console.log(result);
       let ourNumberArray = this.billetShipping.ourNumber.split("");
       for (let i = 0; i < ourNumberArray.length; i++) {
         if (this.billetShipping.ourNumber.charAt(i) !== "0") {
@@ -149,7 +147,6 @@ export class BillsToPayComponent {
           break;
         }
       }
-      console.log(this.billetShipping.documentNumber);
       this.billetShippingService.getLastCounter().subscribe(result => {
 
         let nextCounter = result + 1;
@@ -195,10 +192,9 @@ export class BillsToPayComponent {
         this.billetShipping.chargingType = paymentTypes;
         this.billetShipping.documentNumber = this.ourNumber.substring(
           this.ourNumber.length - 7, this.ourNumber.length - 2);
-        console.log(this.billetShipping.billValue);
         this.generateCodeBar(this.generateQrBarCode());
         setTimeout(() => {
-          this.printBillet();
+          // this.printBillet();
         }, 2000);
       }, error => {
         console.log(error);
@@ -214,13 +210,13 @@ export class BillsToPayComponent {
     let codeBarFirstGroup = "033998548";
     let codeBarFirstGroupInverted = codeBarFirstGroup.split("").reverse().join("");
     let total = 0;
-    for (let i = 0; i < codeBarFirstGroupInverted.length;i++) {
+    for (let i = 0; i < codeBarFirstGroupInverted.length; i++) {
       let currentNumber = parseInt(codeBarFirstGroupInverted[i]);
       if (i == 4 && currentNumber == 9) {
         total += currentNumber;
       } else {
         if (i % 2 == 0) {
-          if (currentNumber * 2 > 10) {
+          if (currentNumber * 2 > 9) {
             let firstDigit: number = parseInt((currentNumber * 2).toString().split("")[0].toString());
             let secondDigit: number = parseInt((currentNumber * 2).toString().split("")[1].toString());
             total += (firstDigit + secondDigit);
@@ -233,39 +229,58 @@ export class BillsToPayComponent {
       }
     }
     let digitRest = parseInt((total / 10).toString().split(".")[1]);
-    codeBarFirstGroup += "." + (10 - digitRest);
+    codeBarFirstGroup += (10 - digitRest);
+    console.log("primeiro grupo: " + codeBarFirstGroup);
     // Segundo Grupo
     let codeBarSecondGroup = "862" + this.ourNumber.substr(0, 7);
     let codeBarSecondGroupInverted = codeBarSecondGroup.split("").reverse().join("");
     let totalSecondGroup = 0;
+    console.log(codeBarSecondGroupInverted);
     for (let j = 0 ; j < codeBarSecondGroupInverted.length; j++) {
       let currentNumber = parseInt(codeBarSecondGroupInverted[j]);
-      if (j % 2 == 0) {
-        totalSecondGroup += currentNumber * 2;
+      if (j == 0 || j % 2 == 0) {
+        if ((currentNumber * 2) > 9) {
+          let firstDigit: number = parseInt((currentNumber * 2).toString().split("")[0].toString());
+          let secondDigit: number = parseInt((currentNumber * 2).toString().split("")[1].toString());
+          totalSecondGroup += (firstDigit + secondDigit);
+        } else {
+          totalSecondGroup += (currentNumber * 2);
+        }
       } else {
         totalSecondGroup += currentNumber;
       }
     }
     let digitRestSecondGroup = parseInt((totalSecondGroup / 10).toString().split(".")[1]);
-    codeBarSecondGroup += "." + (10 - digitRestSecondGroup);
+    codeBarSecondGroup += (10 - digitRestSecondGroup);
+    console.log("segundo grupo: " + codeBarSecondGroup);
     //Terceiro Grupo
-    let codeBarThirdGroup = this.ourNumber.substr(7, 14);
+    //5 7 8 0 0 0 0 1 0 2
+    /*let codeBarThirdGroup = this.ourNumber.substr(6, this.ourNumber.length - 1);
     codeBarThirdGroup = codeBarThirdGroup.replace(/-/g, "");
-    codeBarThirdGroup += "0101";
+    codeBarThirdGroup += "0101";*/
+    let codeBarThirdGroup = "5780000102";
     let codeBarThirdGroupInverted = codeBarThirdGroup.split("").reverse().join("");
     let totalThirdGroup = 0;
     for (let k = 0; k < codeBarThirdGroupInverted.length; k++) {
       let currentNumberThirdGroup = parseInt(codeBarThirdGroupInverted[k]);
-      if (k % 2 == 0) {
-        totalThirdGroup += currentNumberThirdGroup * 2;
+      if (k == 0 || k % 2 == 0) {
+        if ((currentNumberThirdGroup * 2) > 9) {
+          let firstDigit: number = parseInt((currentNumberThirdGroup * 2).toString().split("")[0].toString());
+          let secondDigit: number = parseInt((currentNumberThirdGroup * 2).toString().split("")[1].toString());
+          totalThirdGroup += (firstDigit + secondDigit);
+          console.log(firstDigit, secondDigit);
+        } else {
+          totalThirdGroup += (currentNumberThirdGroup * 2);
+        }
       } else {
         totalThirdGroup += currentNumberThirdGroup;
       }
     }
+    console.log("total terceiro grupo: " + totalThirdGroup);
     let restDigitThirdGroup = (totalThirdGroup / 10).toString().split(".")[1] !== undefined ?
       parseInt((totalThirdGroup / 10).toString().split(".")[1]): 0;
     restDigitThirdGroup = restDigitThirdGroup !== NaN ? restDigitThirdGroup: 0;
-    codeBarThirdGroup +=  "." + (10 - restDigitThirdGroup);
+    codeBarThirdGroup +=  (10 - restDigitThirdGroup);
     // Quarto Grupo - Digito Verificador
     let factorMaturity = moment().diff(moment("1997-10-07"), 'days');
     // Numero PSK (Codigo G2) = 8548862
@@ -289,10 +304,8 @@ export class BillsToPayComponent {
         numberToCalc = 2;
       }
     }
-    console.log(totalFourthGroup);
     let verifyDigit = ((totalFourthGroup * 10) / 11).toString().split(".")[1];
     let numberVerifyDigit = 0;
-    console.log(verifyDigit);
     if (verifyDigit !== undefined) {
       if (verifyDigit.split("").length > 1) {
         if (parseInt(verifyDigit.split("")[1]) > 5){
@@ -307,19 +320,32 @@ export class BillsToPayComponent {
     // Quinto Grupo -> Fator de Vencimento e Valor Nominal
     let codeBarFifthGroup = factorMaturity + nominalValue;
     this.billetShipping.codeBar = codeBarFirstGroup + " " + codeBarSecondGroup + " " + codeBarThirdGroup + " " + numberVerifyDigit + " " + codeBarFifthGroup;
+    //Inserir pontos
+    this.billetShipping.codeBar = this.insertStr(this.billetShipping.codeBar, [5, 17, 30], ".");
     console.log("Código de Barras: " + this.billetShipping.codeBar);
-    // setTimeout(() => {
+    //15
+    setTimeout(() => {
       if (callback) {
         callback();
       }
-    // }, 2000);
+    }, 2000);
+  }
+
+  private insertStr(str, indexes, value): string {
+    for (let i = 0; i < indexes.length; i++) {
+      str = str.substr(0, indexes[i]) + value + str.substr(indexes[i]);
+    }
+    console.log(str);
+    return str;
   }
 
   private generateQrBarCode(): void {
-    let s = document.createElement("script");
-    s.type = "text/javascript";
-    s.src = "src/app/financial/bills-to-pay/billet-payment/billet-barcode.js";
-    this.elementRef.nativeElement.appendChild(s);
+    // setTimeout(() => {
+      let s = document.createElement("script");
+      s.type = "text/javascript";
+      s.src = "src/app/financial/bills-to-pay/billet-payment/billet-barcode.js";
+      this.elementRef.nativeElement.appendChild(s);
+    // }, 5000);
   }
 
   public printBillet(): void {

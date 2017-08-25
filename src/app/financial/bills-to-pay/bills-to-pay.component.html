@@ -15,9 +15,12 @@
           'bg-info': billToPayPayment.dateStatus === 'IS_SAME'}">
         <td class="text-center">{{getConvertedDate(billToPayPayment.maturity)}}</td>
         <td class="text-left">{{billToPayPayment.description}}</td>
-        <td class="text-center">R$ {{billToPayPayment.billetValue}}</td>
+        <td class="text-center">R$ {{billToPayPayment.billValue}}</td>
         <td class="text-center">
-          <span (click)="generateBillet(billToPayPayment.id)" class="fa fa-file-text-o"></span>
+          <button class="btn btn-primary" (click)="generateBillet(billToPayPayment.id)">
+            <span class="fa fa-file-text-o"></span> Boleto
+          </button>
+
         </td>
       </tr>
     </tbody>
