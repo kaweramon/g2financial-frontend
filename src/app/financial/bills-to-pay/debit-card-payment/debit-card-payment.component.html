@@ -1,5 +1,5 @@
 <div class="col-lg-12 col-md-12" style="margin-top: 15px">
-  <ng2-toasty></ng2-toasty>
+  <!--<ng2-toasty></ng2-toasty>-->
   <form class="form">
     <div class="row">
       <div class="col-lg-4 col-md-4 form-group">
@@ -7,9 +7,9 @@
         <select name="inputDebitCardBrand" id="inputDebitCardBrand" class="form-control"
                 [(ngModel)]="payment.DebitCard.Brand">
           <option value="Visa">Visa</option>
-          <option value="">MasterCard</option>
-          <option value="">Elo</option>
-          <option value="">Diners Club</option>
+          <option value="Master">MasterCard</option>
+          <option value="Elo">Elo</option>
+          <option value="Diners">Diners Club</option>
           <option value="">Hipercard</option>
         </select>
       </div>
@@ -37,7 +37,7 @@
       </div>
     </div>
     <div class="col-lg-12 col-md-12 form-group" style="padding: 0px">
-      <button class="btn btn-primary pull-right" (click)="doPayment()">Finalizar</button>
+      <button id="btnDoPaymentDebitCard" class="btn btn-primary pull-right" (click)="doPayment()">Finalizar</button>
     </div>
   </form>
 </div>

@@ -1,4 +1,4 @@
-<ng2-toasty></ng2-toasty>
+<!--<ng2-toasty></ng2-toasty>-->
 <div class="col-lg-12 col-md-12" style="margin-top: 20px">
   <form class="form">
     <div class="row">
@@ -12,6 +12,7 @@
           <option value="Diners">Diners Club</option>
           <option value="Aura">Aura</option>
           <option value="JCB">JCB</option>
+          <option value="Discover">Discover</option>
         </select>
       </div>
       <div class="col-lg-4 col-md-4 form-group">
@@ -97,21 +98,21 @@
               <p class="text-left">Mamanguape - PB</p>
               <p class="text-left"><strong>{{getCurrentDate('DD/MM/YYYY')}}</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>{{getCurrentDate('hh:mm')}}</strong></p>
               <p class="text-left"><strong>VALOR:</strong></p>
-              <p style="margin-top: -15px;" class="text-right"><strong>{{totalPayment | number : '1.2-2'}}</strong></p>
+              <p style="margin-top: -15px; text-align: right"><strong>{{totalPayment | number : '1.2-2'}}</strong></p>
               <!--Outros valores-->
               <p class="text-left">******{{getLast4DigitsFromCard()}}</p>
-              <p style="margin-top: -20px;" class="text-right">{{payment.Installments}}x</p>
+              <p style="margin-top: -20px; text-align: right">{{payment.Installments}}x</p>
               <p class="text-left">Termino: {{getConvertedDate(payment.RecurrentPayment?.EndDate)}}</p>
-              <p class="text-right" style="margin-top: -15px;">Parcelas: {{getNumberRecurrentInstalments()}}</p>
+              <p style="margin-top: -15px;text-align: right;">Parcelas: {{getNumberRecurrentInstalments()}}</p>
               <p class="text-left">Transacao: {{cieloPayment?.tid}}</p>
-              <p class="text-right" style="margin-top: -15px;">NSU: {{cieloPayment?.proofOfSale}}</p>
+              <p style="margin-top: -15px;text-align: right;">NSU: {{cieloPayment?.proofOfSale}}</p>
               <hr style="border-top: 1px dashed #8c8b8b;">
               <!--Lista-->
               <p class="text-left">DESCRICAO</p>
               <p class="text-right" style="margin-top: -15px;">PRECO(R$)</p>
               <div *ngFor="let billToPayPayment of listBillToPayPayment">
                 <p class="text-left">{{billToPayPayment.description}}</p>
-                <p class="text-right"  style="margin-top: -15px;">{{billToPayPayment.subTotal | number : '1.2-2'}}</p>
+                <p  style="margin-top: -15px;text-align: right">{{billToPayPayment.subTotal | number : '1.2-2'}}</p>
               </div>
             </div>
           </div>

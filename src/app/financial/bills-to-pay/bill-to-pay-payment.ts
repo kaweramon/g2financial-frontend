@@ -1,3 +1,5 @@
+import {BilletShipping} from './billet-payment/billet-shipping';
+
 export class BillToPayPayment {
 
   public id: number;
@@ -19,6 +21,7 @@ export class BillToPayPayment {
   public subTotal: number;
   public daysInArrears: number;
   public dateStatus: string;
+  public billetShipping: BilletShipping;
 
   constructor() {
     this.amount = 0.0;

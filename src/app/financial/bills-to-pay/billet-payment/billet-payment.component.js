@@ -12,8 +12,11 @@ var BilletPaymentComponent = (function () {
     function BilletPaymentComponent() {
         // this.billetShipping = new BilletShipping();
     }
-    BilletPaymentComponent.prototype.getMaturityDate = function () {
+    BilletPaymentComponent.prototype.getCurrentDate = function () {
         return moment().format('DD/MM/YYYY');
+    };
+    BilletPaymentComponent.prototype.getMaturityDate = function (date) {
+        return moment(date).format('DD/MM/YYYY');
     };
     return BilletPaymentComponent;
 }());
@@ -26,6 +29,9 @@ __decorate([
 __decorate([
     core_1.Input()
 ], BilletPaymentComponent.prototype, "billetShipping", void 0);
+__decorate([
+    core_1.Input()
+], BilletPaymentComponent.prototype, "client", void 0);
 BilletPaymentComponent = __decorate([
     core_1.Component({
         selector: 'app-billet-payment',

@@ -9,29 +9,31 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
 var moment = require("moment");
 var payment_1 = require("./payment");
-var billet_shipping_1 = require("./billet-payment/billet-shipping");
 var $ = require("jquery");
+var client_1 = require("../../search-client/client");
 var BillsToPayComponent = (function () {
-    function BillsToPayComponent(route, service, elementRef, typeInterestService, billetShippingService) {
+    function BillsToPayComponent(route, service, elementRef, typeInterestService, clientService) {
         var _this = this;
         this.route = route;
         this.service = service;
         this.elementRef = elementRef;
         this.typeInterestService = typeInterestService;
-        this.billetShippingService = billetShippingService;
+        this.clientService = clientService;
         this.listBillToPayPayment = [];
         this.listSelectedBillToPayPayment = [];
         this.isPaymentSelected = false;
         this.totalPayment = 0;
-        this.maskValidDate = [/[0-9]/, /\d/, '/', /\d/, /\d/, /\d/, /\d/];
-        this.maskSecurityCode = [/[0-9]/, /\d/, /\d/];
         this.paymentMethod = '';
         this.ourNumber = "";
         this.codeBar = "";
+        this.billetGenerated = false;
+        this.client = new client_1.Client();
         this.payment = new payment_1.Payment();
         //TODO: remover
         this.paymentMethod = 'BILLET';
-        // this.isPaymentSelected = true;
+        this.clientService.view(this.route.snapshot.params["clientId"]).subscribe(function (client) {
+            _this.client = client;
+        });
         this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(function (result) {
             _this.listBillToPay = result;
             _this.getListBillToPayPayment();
@@ -61,9 +63,6 @@ var BillsToPayComponent = (function () {
             if (billToPayPayment.isChecked) {
                 this.totalPayment += billToPayPayment.subTotal;
                 this.listSelectedBillToPayPayment.push(billToPayPayment);
-            }
-            if (i == this.listBillToPayPayment.length - 1) {
-                this.generateCodeBar();
             }
         }
     };
@@ -110,68 +109,260 @@ var BillsToPayComponent = (function () {
             billToPayment.subTotal = billToPayment.amount;
         }
     };
-    BillsToPayComponent.prototype.generateBillet = function () {
+    BillsToPayComponent.prototype.generateBillet = function (billetShipping) {
         var _this = this;
         $('#btnGenerateBillet').prop('disabled', true);
-        this.billetShippingService.getLastCounter().subscribe(function (result) {
-            var nextCounter = result + 1;
-            _this.billetShipping = new billet_shipping_1.BilletShipping();
-            _this.billetShipping.counter = nextCounter;
-            for (var i = 0; i < (12 - nextCounter.toString().length); i++) {
-                _this.ourNumber += "0";
+        this.billetShipping = billetShipping;
+        this.billetShipping.clientId = this.route.snapshot.params["clientId"];
+        this.billetShipping.isCancel = false;
+        var paymentTypes = "";
+        for (var i = 0; i < this.listSelectedBillToPayPayment.length; i++) {
+            if (i < this.listSelectedBillToPayPayment.length - 1) {
+                paymentTypes += this.listSelectedBillToPayPayment[i].description + ", ";
             }
-            _this.ourNumber += nextCounter.toString();
-            //Calculo do digito Santander
-            var ourNumberArrayInverted = _this.ourNumber.split("").reverse().join("");
-            var total = 0;
-            for (var j = 0; j < ourNumberArrayInverted.length; j++) {
-                if (j < 8) {
-                    total += (parseInt(ourNumberArrayInverted[j]) * (j + 2));
-                }
-                else if (j === 8) {
-                    total += (parseInt(ourNumberArrayInverted[j]) * 2);
-                }
-                else if (j === 9) {
-                    total += (parseInt(ourNumberArrayInverted[j]) * 3);
-                }
-                else if (j === 10) {
-                    total += (parseInt(ourNumberArrayInverted[j]) * 4);
-                }
-                else if (j === 11) {
-                    total += (parseInt(ourNumberArrayInverted[j]) * 5);
-                }
+            else {
+                paymentTypes += this.listSelectedBillToPayPayment[i].description;
             }
-            var rest = "0";
-            if ((total / 11).toString().indexOf(".") !== -1) {
-                rest = (total / 11).toString().split(".")[1].split("")[0];
-            }
-            var digit = 11 - parseInt(rest);
-            _this.ourNumber += "-" + digit;
-            _this.billetShipping.ourNumber = _this.ourNumber;
-            _this.billetShipping.billValue = _this.totalPayment;
-            _this.billetShipping.clientId = _this.route.snapshot.params["clientId"];
-            _this.billetShipping.isCancel = false;
-            var paymentTypes = "";
-            for (var i = 0; i < _this.listSelectedBillToPayPayment.length; i++) {
-                if (i < _this.listSelectedBillToPayPayment.length - 1) {
-                    paymentTypes += _this.listSelectedBillToPayPayment[i].description + ", ";
+        }
+        this.billetShipping.chargingType = paymentTypes;
+        this.billetShipping.partialPayment = "NAO";
+        this.billetShipping.documentNumber = this.ourNumber.substring(this.ourNumber.length - 7, this.ourNumber.length - 2);
+        this.billetGenerated = true;
+        this.generateCodeBarCaixa();
+        setTimeout(function () {
+            _this.billetGenerated = true;
+            _this.generateQrBarCode();
+            // this.printBillet();
+        }, 500);
+    };
+    BillsToPayComponent.prototype.generateCodeBarCaixa = function () {
+        // Posição 1-3 -> Identificação do banco (104)
+        // Posição 4 -> Código da moeda (9 - Real)
+        // TODO: Posição 5 -> DV Geral do Código de Barras
+        var codeBarToReturn = "";
+        // Posição 06 - 09 -> Fator de Vencimento
+        var maturityFactor = this.getMaturityFactor(this.billetShipping.maturityDate);
+        var billetValueCalculated = this.getBilletCodeBarValue(this.billetShipping.billValue).toString();
+        // 20 – 25 6 9 (6) Código do Beneficiário
+        var benefictCode = "377192";
+        // 26 – 26 1 9 (1) DV do Código do Beneficiário
+        var dvBenefictCode = this.getVerifyDigitBeneficiaryCode(benefictCode);
+        // 27 – 29 3 9 (3) Nosso Número - Seqüência 1
+        codeBarToReturn += this.billetShipping.ourNumber.substring(0, 2);
+        // 30 – 30 1 9 (1) Constante 1
+        codeBarToReturn += "1";
+        // 31 – 33 3 9 (3) Nosso Número - Seqüência 2
+        codeBarToReturn += this.billetShipping.ourNumber.substring(3, 5);
+        // 34 – 34 1 9 (1) Constante 2
+        codeBarToReturn += "4";
+        // 35 – 43 9 9 (9) Nosso Número - Seqüência 3
+        codeBarToReturn += this.billetShipping.ourNumber.substring(6, this.billetShipping.ourNumber.length - 1);
+        // 44 – 44 1 9 (1) DV do Campo Livre
+        // Código do beneficiário -> 377192
+        var dvFreeCamp = this.getFreeCampCodeBar("377192", dvBenefictCode.toString(), this.billetShipping.ourNumber);
+        var generalVerifyDigit = this.getVerifyDigitGeneral(maturityFactor, billetValueCalculated, benefictCode, dvBenefictCode.toString(), this.billetShipping.ourNumber, dvFreeCamp);
+        var field1 = "1049" + benefictCode.charAt(0) + "." + benefictCode.substring(1, 5) +
+            this.getVerifyDigitFields123("1049" + benefictCode.charAt(0) + benefictCode.substring(1, 5));
+        var field2 = benefictCode.charAt(benefictCode.length - 1) + dvBenefictCode + this.billetShipping.ourNumber.substring(0, 3)
+            + ".1" + this.billetShipping.ourNumber.substring(3, 6) + "4" +
+            this.getVerifyDigitFields123(benefictCode.charAt(benefictCode.length - 1) + dvBenefictCode +
+                this.billetShipping.ourNumber.substring(0, 3) + "1" + this.billetShipping.ourNumber.substring(3, 6) + "4");
+        var field3 = this.billetShipping.ourNumber.substring(6, 11) + "." +
+            this.billetShipping.ourNumber.substring(11, this.billetShipping.ourNumber.length) + dvFreeCamp +
+            this.getVerifyDigitFields123(this.billetShipping.ourNumber.substring(6, 11) +
+                this.billetShipping.ourNumber.substring(11, this.billetShipping.ourNumber.length) + dvFreeCamp);
+        codeBarToReturn = field1 + " " + field2 + " " + field3 + " " + generalVerifyDigit + " " + maturityFactor + billetValueCalculated;
+        this.billetShipping.ourNumber = "14" + this.billetShipping.ourNumber + "-" +
+            this.getVerifyDigitOurNumber("14" + this.billetShipping.ourNumber);
+        this.codeBar = codeBarToReturn;
+    };
+    // CÁLCULO DO DÍGITO VERIFICADOR DA LINHA DIGITÁVEL (CAMPOS 1, 2 E 3)
+    BillsToPayComponent.prototype.getVerifyDigitFields123 = function (strToCalc) {
+        var toReturn;
+        var total = 0;
+        strToCalc = strToCalc.split("").reverse().join("");
+        for (var i = 0; i < strToCalc.length; i++) {
+            if (i % 2 == 0 || i == 0) {
+                if ((parseInt(strToCalc[i]) * 2).toString().split("").length == 2) {
+                    var alg1 = parseInt((parseInt(strToCalc[i]) * 2).toString().split("")[0]);
+                    var alg2 = parseInt((parseInt(strToCalc[i]) * 2).toString().split("")[1]);
+                    total += (alg1 + alg2);
                 }
                 else {
-                    paymentTypes += _this.listSelectedBillToPayPayment[i].description;
+                    total += parseInt(strToCalc[i]) * 2;
                 }
             }
-            _this.billetShipping.chargingType = paymentTypes;
-            _this.billetShipping.partialPayment = "NAO";
-            _this.billetShipping.documentNumber = _this.ourNumber.substring(_this.ourNumber.length - 7, _this.ourNumber.length - 2);
-            _this.billetShippingService.create(_this.billetShipping).subscribe(function (result) {
-                console.log(JSON.stringify(result));
-            }, function (error) {
-                console.log(error);
-            });
-            _this.generateQrBarCode();
-        }, function (error) {
-            console.log(error);
-        });
+            else {
+                total += parseInt(strToCalc[i]);
+            }
+        }
+        if (total < 10) {
+            toReturn = 10 - total;
+        }
+        var restAux = (total / 10).toString().split(".");
+        var rest = parseInt(restAux[1].split("")[restAux[1].split("").length - 1]);
+        if (rest == 0) {
+            toReturn = 0;
+        }
+        else {
+            toReturn = 10 - rest;
+        }
+        return toReturn;
+    };
+    //  CALCULO DO DÍGITO VERIFICADOR GERAL DO CÓDIGO DE BARRAS
+    BillsToPayComponent.prototype.getVerifyDigitGeneral = function (maturityFactor, billetValue, benefictCode, dvBenefictCode, ourNumber, dvFreeCamp) {
+        var toReturn;
+        var calcStrArray = ("1049" + maturityFactor + billetValue + benefictCode + dvBenefictCode + ourNumber.substring(0, 3)
+            + "1" + ourNumber.substring(3, 6) + "4" + ourNumber.substring(6, ourNumber.length) + dvFreeCamp).split("");
+        var total = 0;
+        for (var i = 0; i < calcStrArray.length; i++) {
+            if (i == 0 || i == 8 || i == 16 || i == 24 || i == 32 || i == 40) {
+                total += parseInt(calcStrArray[i]) * 4;
+            }
+            if (i == 1 || i == 9 || i == 17 || i == 25 || i == 33 || i == 41) {
+                total += parseInt(calcStrArray[i]) * 3;
+            }
+            if (i == 2 || i == 10 || i == 18 || i == 26 || i == 34 || i == 42) {
+                total += parseInt(calcStrArray[i]) * 2;
+            }
+            if (i == 3 || i == 11 || i == 19 || i == 27 || i == 35 || i == 43) {
+                total += parseInt(calcStrArray[i]) * 9;
+            }
+            if (i == 4 || i == 12 || i == 20 || i == 28 || i == 36) {
+                total += parseInt(calcStrArray[i]) * 8;
+            }
+            if (i == 5 || i == 13 || i == 21 || i == 29 || i == 37) {
+                total += parseInt(calcStrArray[i]) * 7;
+            }
+            if (i == 6 || i == 14 || i == 22 || i == 30 || i == 38) {
+                total += parseInt(calcStrArray[i]) * 6;
+            }
+            if (i == 7 || i == 15 || i == 23 || i == 31 || i == 39) {
+                total += parseInt(calcStrArray[i]) * 5;
+            }
+        }
+        var restAux = (total / 11).toString().split(".");
+        var rest;
+        if (restAux[1] === undefined) {
+            toReturn = 1;
+        }
+        else {
+            rest = (parseInt(restAux[1].split("")[0]) + 1);
+        }
+        if (rest !== undefined) {
+            if ((11 - rest) > 9) {
+                toReturn = 1;
+            }
+            else {
+                toReturn = 11 - rest;
+            }
+        }
+        return toReturn;
+    };
+    // Cálculo do fator de vencimento Posição: 06-09 - CAIXA
+    BillsToPayComponent.prototype.getMaturityFactor = function (date) {
+        return moment(date).diff(moment("1997-10-07"), 'days');
+    };
+    // Cálculo do digito verificador do código do beneficiário - CAIXA
+    BillsToPayComponent.prototype.getVerifyDigitBeneficiaryCode = function (beneficiaryCode) {
+        var toReturn;
+        var beneficiaryCodeInverted = beneficiaryCode.split("").reverse().join("");
+        var total = 0;
+        for (var i = 0; i < beneficiaryCodeInverted.length; i++) {
+            total += (parseInt(beneficiaryCodeInverted[i]) * (i + 2));
+        }
+        var rest = 0;
+        if (total >= 11) {
+            var restAux = (total / 11).toString().split(".");
+            rest = parseInt(restAux[1].split("")[restAux[1].split("").length - 1]);
+            toReturn = (11 - rest);
+        }
+        else {
+            toReturn = (11 - total);
+        }
+        if (toReturn > 9) {
+            return 0;
+        }
+        return toReturn;
+    };
+    // CAMPO LIVRE DO CÓDIGO DE BARRAS
+    BillsToPayComponent.prototype.getFreeCampCodeBar = function (beneficCode, dvBenefictCode, ourNumber) {
+        var result;
+        var strCalcFreeCamp = beneficCode + dvBenefictCode + ourNumber.substring(0, 3) + "1" + ourNumber.substring(3, 6) + "4" +
+            ourNumber.substring(6, ourNumber.length);
+        var strInverted = strCalcFreeCamp.split("").reverse().join("");
+        var multiplicationIndex = 2;
+        var total = 0;
+        for (var i = 0; i < strInverted.length; i++) {
+            if (i == 8 || i == 16) {
+                multiplicationIndex = 2;
+            }
+            total += (parseInt(strInverted[i])) * multiplicationIndex;
+            multiplicationIndex++;
+        }
+        if (total < 11) {
+            result = total - 11;
+        }
+        else {
+            var divisionResult = (total / 11).toString().split(".");
+            var rest = void 0;
+            if (divisionResult[1] !== undefined) {
+                if (divisionResult[1].split("").length > 1) {
+                    rest = parseInt(divisionResult[1].split("")[0]) + 1;
+                }
+                else {
+                    rest = (parseInt(divisionResult[1].split("")[0]));
+                }
+            }
+            else {
+                rest = 0;
+            }
+            result = 11 - rest;
+        }
+        return result;
+    };
+    // Cálculo do valor (Posição: 10-19) - CAIXA
+    BillsToPayComponent.prototype.getBilletCodeBarValue = function (billValue) {
+        var toReturn = "";
+        var cleanValueStr = "";
+        if (billValue.toString().indexOf(".") == -1 && billValue.toString().indexOf(",") == -1) {
+            for (var i = 0; i < (8 - billValue.toString().length); i++) {
+                toReturn += "0";
+            }
+            toReturn += billValue;
+            toReturn += "00";
+        }
+        else {
+            cleanValueStr = billValue.toString().replace(".", "").replace(",", "");
+            for (var i = 0; i < (10 - cleanValueStr.length); i++) {
+                toReturn += "0";
+            }
+            toReturn += cleanValueStr;
+        }
+        return toReturn;
+    };
+    BillsToPayComponent.prototype.getVerifyDigitOurNumber = function (ourNumber) {
+        var toReturn;
+        var ourNumberInverted = ourNumber.split("").reverse().join("");
+        var total = 0;
+        var multiplicationIndex = 2;
+        for (var i = 0; i < ourNumberInverted.length; i++) {
+            if (i == 8 || i == 16) {
+                multiplicationIndex = 2;
+            }
+            total += parseInt(ourNumberInverted[i]) * multiplicationIndex;
+            multiplicationIndex++;
+        }
+        var rest;
+        var restAux = (total / 11).toString().split(".");
+        rest = ((parseInt(restAux[1].split("").pop())) + 1);
+        if ((11 - rest) > 9) {
+            toReturn = 0;
+        }
+        else {
+            toReturn = 11 - rest;
+        }
+        return toReturn;
     };
     BillsToPayComponent.prototype.generateCodeBar = function () {
         // Primeiro Grupo
@@ -258,10 +449,8 @@ var BillsToPayComponent = (function () {
                 numberToCalc = 2;
             }
         }
-        console.log(totalFourthGroup);
         var verifyDigit = ((totalFourthGroup * 10) / 11).toString().split(".")[1];
         var numberVerifyDigit = 0;
-        console.log(verifyDigit);
         if (verifyDigit !== undefined) {
             if (verifyDigit.split("").length > 1) {
                 if (parseInt(verifyDigit.split("")[1]) > 5) {
@@ -279,6 +468,11 @@ var BillsToPayComponent = (function () {
         var codeBarFifthGroup = factorMaturity + nominalValue;
         this.codeBar = codeBarFirstGroup + " " + codeBarSecondGroup + " " + codeBarThirdGroup + " " + numberVerifyDigit + " " + codeBarFifthGroup;
         console.log("Código de Barras: " + this.codeBar);
+        console.log(this.getMaturityFactor('2006-08-23'));
+        console.log(this.getBilletCodeBarValue(this.totalPayment));
+        console.log("dig cod. beneficiário: " + this.getVerifyDigitBeneficiaryCode("005507"));
+        //Código do beneficiário: 45000
+        //DV do Código do Beneficiário = 0
     };
     BillsToPayComponent.prototype.generateQrBarCode = function () {
         var _this = this;
@@ -296,7 +490,7 @@ var BillsToPayComponent = (function () {
         printContents = document.getElementById('tablebillet').innerHTML;
         popupWin = window.open('', '_blank', 'top=0,left=0,height=100%,width=auto');
         popupWin.document.open();
-        popupWin.document.write("\n      <html>\n        <head>\n          <style>\n          .logo{\n  text-align: center; height: 10mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000\n}\n.logo{\n  text-align: center; height: 10mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000\n}\n.bankCode {\n  font-size: 5mm; font-family: arial, verdana; font-weight : bold;\n  font-style: italic; text-align: center; vertical-align: bottom;\n  padding-right: 1mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000\n}\n.bankCode2 {\n  font-size: 5mm; font-family: arial, verdana; font-weight : bold;\n  font-style: italic; text-align: center; vertical-align: bottom;\n  /*border-bottom: 1.2mm solid #000000; border-right: 1.2mm solid #000000;*/\n}\n.billetNumber {\n  font-size: 5mm; font-family: arial, verdana; font-weight : bold;\n  text-align: center; vertical-align: bottom; padding-bottom : 1mm;\n}\n.billetRightHeader {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; border-bottom: 1mm solid #000000\n}\n.billetRightHeader2 {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;\n}\n.billetRightField {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; border-left: 0.15mm solid #000000;\n}\n.billetLeftField2 {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; border-left: 0.15mm solid #000000;\n}\n.billetLeftField {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;\n}\n.billetLeftValue {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;\n}\n.billetLeftValue2 {\n  font-size: 3mm; font-family: arial, verdana; padding-left : 1mm;\n  text-align: center; font-weight: bold; border-left: 0.15mm solid #000000;\n  border-bottom: 0.15mm solid #000000;\n}\n.billetRightTextValue {\n  font-size: 3mm; font-family: arial, verdana; text-align:right;\n  padding-right: 1mm; font-weight: bold; border-left: 0.15mm solid #000000;\n  border-bottom: 0.15mm solid #000000;\n}\n.tr-border-bottom {\n  border-bottom: 0.15mm solid #000000;\n}\n\n</style>\n          <title>Comprovante</title>\n        </head>\n    <body onload=\"window.print();window.close()\">" + printContents + "</body>\n      </html>");
+        popupWin.document.write("\n      <html>\n        <head>\n          <style>\n          .logo{\n  text-align: center; height: 10mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000\n}\n.img-logo {\n  content: url('../../../assets/images/logo_caixa.png');\n}\n.bankCode {\n  font-size: 5mm; font-family: arial, verdana; font-weight : bold;\n  font-style: italic; text-align: center; vertical-align: bottom;\n  padding-right: 1mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000\n}\n.bankCode2 {\n  font-size: 5mm; font-family: arial, verdana; font-weight : bold;\n  font-style: italic; text-align: center; vertical-align: bottom;\n  /*border-bottom: 1.2mm solid #000000; border-right: 1.2mm solid #000000;*/\n}\n.billetNumber {\n  font-size: 3.2mm; font-family: arial, verdana; font-weight : bold;\n  text-align: center; vertical-align: bottom; padding-bottom : 1mm;\n  border-bottom: 1mm solid #000000;\n}\n.billetRightHeader {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;\n  border-bottom: 1mm solid #000000; font-weight : bold;\n}\n.billetRightHeader2 {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;\n}\n.billetRightField {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;\n  border-left: 0.15mm solid #000000;\n}\n.billetRightFieldBorderNone {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;\n}\n.billetLeftField2 {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; border-left: 0.15mm solid #000000;\n}\n.billetLeftField {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;\n}\n.billetLeftValue {\n  font-size: 0.29cm; font-family: arial, verdana; padding-left : 1mm;\n  border-left: 0.15mm solid #000000; border-bottom: 0.15mm solid #000000;\n  font-weight: bold;\n}\n.billetLeftValueBorderNone {\n  font-size: 0.29cm; font-family: arial, verdana; padding-left : 1mm;\n  font-weight: bold;\n}\n.billetLeftValue2 {\n  font-size: 3mm; font-family: arial, verdana; padding-left : 1mm;\n  text-align: center; font-weight: bold; border-left: 0.15mm solid #000000;\n  border-bottom: 0.15mm solid #000000;\n}\n.billetLeftValue3 {\n  font-size: 0.29cm; font-family: arial, verdana; padding-left : 1mm;\n  text-align: left; font-weight: bold; border-left: 0.15mm solid #000000;\n}\n.billetRightTextValue {\n  font-size: 0.29cm; font-family: arial, verdana; text-align:right;\n  padding-right: 1mm; font-weight: bold; border-left: 0.15mm solid #000000; border-bottom: 0.15mm solid #000000;\n}\n.billetLeftTextValue2 {\n  font-size: 0.29cm; font-family: arial, verdana;\n  padding-left: 1mm; font-weight: bold; border-left: 0.15mm solid #000000;\n}\n.tr-border-bottom {\n  border-bottom: 0.15mm solid #000000;\n}\n</style>\n          <title>Comprovante</title>\n        </head>\n    <body onload=\"window.print();window.close()\">" + printContents + "</body>\n      </html>");
         popupWin.document.close();
     };
     return BillsToPayComponent;

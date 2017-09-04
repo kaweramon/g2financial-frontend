@@ -14,6 +14,7 @@ var BillToPayService = (function () {
         this.urlBillToPay = 'http://localhost:8080/bill-to-pay/';
         this.urlSandBox = 'https://apisandbox.cieloecommerce.cielo.com.br/1/sales';
         this.urlSandBoxCard = 'https://apisandbox.cieloecommerce.cielo.com.br/1/card';
+        this.urlCieloProduction = "https://apiquery.cieloecommerce.cielo.com.br/";
         this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
         this.params = new http_1.URLSearchParams();
     }
@@ -25,11 +26,11 @@ var BillToPayService = (function () {
     BillToPayService.prototype.paymentCreditCard = function (payment) {
         this.params = new http_1.URLSearchParams();
         this.setMerchantIdAndKey();
-        return this.http.post(this.urlSandBox, payment, { headers: this.headers, search: this.params }).map(function (res) { return res.json(); });
+        return this.http.post(this.urlCieloProduction, payment, { headers: this.headers, search: this.params }).map(function (res) { return res.json(); });
     };
     BillToPayService.prototype.paymentDebitCard = function (payment) {
         this.setMerchantIdAndKey();
-        return this.http.post(this.urlSandBox, payment, { headers: this.headers }).map(function (res) { return res.json(); });
+        return this.http.post(this.urlCieloProduction, payment, { headers: this.headers }).map(function (res) { return res.json(); });
     };
     BillToPayService.prototype.createCardToken = function (cardTokenRequest) {
         this.setMerchantIdAndKey();

@@ -15,8 +15,9 @@ var CieloPaymentService = (function () {
         this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
         this.params = new http_1.URLSearchParams();
     }
-    CieloPaymentService.prototype.create = function (cieloPayment) {
-        return this.http.post(this.urlCieloPayment, cieloPayment, { headers: this.headers }).map(function (res) { return res.json(); });
+    CieloPaymentService.prototype.create = function (cieloPayment, isForSale) {
+        this.params.set('isForSale', isForSale);
+        return this.http.post(this.urlCieloPayment, cieloPayment, { headers: this.headers, search: this.params }).map(function (res) { return res.json(); });
     };
     return CieloPaymentService;
 }());

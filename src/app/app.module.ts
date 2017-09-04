@@ -25,6 +25,9 @@ import {BillToPayPaymentService} from './financial/bills-to-pay/bill-to-pay-paym
 import {CieloPaymentService} from './financial/bills-to-pay/cielo-payment.service';
 import {SlimLoadingBarModule} from 'ng2-slim-loading-bar';
 import {BilletShippingService} from './financial/bills-to-pay/billet-payment/billet-shipping.service';
+import { LOCALE_ID } from '@angular/core';
+import { ForSaleComponent } from './financial/for-sale/for-sale.component';
+import {CurrencyMaskModule} from 'ng2-currency-mask';
 
 @NgModule({
   declarations: [
@@ -36,7 +39,8 @@ import {BilletShippingService} from './financial/bills-to-pay/billet-payment/bil
     DebitCardPaymentComponent,
     CreditCardPaymentComponent,
     BilletPaymentComponent,
-    RecurrentPaymentComponent
+    RecurrentPaymentComponent,
+    ForSaleComponent
   ],
   imports: [
     BrowserModule,
@@ -48,10 +52,11 @@ import {BilletShippingService} from './financial/bills-to-pay/billet-payment/bil
     routing,
     ToastyModule.forRoot(),
     SlimLoadingBarModule.forRoot(),
-    ModalModule.forRoot()
+    ModalModule.forRoot(),
+    CurrencyMaskModule
   ],
   providers: [ClientService, BillToPayService, TypeInterestChargeService, BillToPayAmountsPaidService,
-    BillToPayPaymentService, CieloPaymentService, BilletShippingService],
+    BillToPayPaymentService, CieloPaymentService, BilletShippingService, {provide: LOCALE_ID, useValue: 'pt-BR'}],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

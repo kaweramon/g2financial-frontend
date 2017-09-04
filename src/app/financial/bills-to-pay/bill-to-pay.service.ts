@@ -9,6 +9,7 @@ export class BillToPayService {
   private urlBillToPay = 'http://localhost:8080/bill-to-pay/';
   private urlSandBox = 'https://apisandbox.cieloecommerce.cielo.com.br/1/sales';
   private urlSandBoxCard = 'https://apisandbox.cieloecommerce.cielo.com.br/1/card';
+  private urlCieloProduction = "https://apiquery.cieloecommerce.cielo.com.br/";
   headers = new Headers({ 'Content-Type': 'application/json' });
   private params = new URLSearchParams();
 
@@ -23,12 +24,12 @@ export class BillToPayService {
   public paymentCreditCard(payment: any): Observable<any> {
     this.params = new URLSearchParams();
     this.setMerchantIdAndKey();
-    return this.http.post(this.urlSandBox, payment, {headers: this.headers, search: this.params}).map(res => res.json());
+    return this.http.post(this.urlCieloProduction, payment, {headers: this.headers, search: this.params}).map(res => res.json());
   }
 
   public paymentDebitCard(payment: any): Observable<any> {
     this.setMerchantIdAndKey();
-    return this.http.post(this.urlSandBox, payment, {headers: this.headers}).map(res => res.json());
+    return this.http.post(this.urlCieloProduction, payment, {headers: this.headers}).map(res => res.json());
   }
 
   public createCardToken(cardTokenRequest: any): Observable<any> {

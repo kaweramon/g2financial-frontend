@@ -6,6 +6,7 @@
         <th class="text-left col-md-6 col-lg-6">Descrição</th>
         <th class="text-center col-lg-2 col-md-2">Valor</th>
         <th class="text-center col-lg-1 col-md-1"></th>
+        <th class="text-center col-lg-1 col-md-1"></th>
       </tr>
     </thead>
     <tbody>
@@ -18,6 +19,13 @@
         <td class="text-center">R$ {{billToPayPayment.amount}}</td>
         <td class="text-center">
           <input type="checkbox" [(ngModel)]="billToPayPayment.isChecked">
+        </td>
+        <td>
+          <button *ngIf="billToPayPayment.billetShipping !== null &&
+          billToPayPayment.billetShipping !== undefined" class="btn btn-primary"
+          (click)="generateBillet(billToPayPayment.billetShipping)">
+            <span class="fa fa-file-text-o"></span>&nbsp;Boleto
+          </button>
         </td>
       </tr>
     </tbody>
@@ -73,7 +81,7 @@
                              (pageChange)="page = $event"></pagination-controls>
       </div>
       <div class="col-lg-2 col-md-2">
-        <label class="control-label pull-right">Total: {{totalPayment | number : '1.2-2'}}</label>
+        <label class="control-label pull-right">Total: {{totalPayment | currency:'BRL':true: '1.2-2'}}</label>
       </div>
     </div>
   </div>
@@ -85,25 +93,22 @@
     <select name="paymentMethod" id="paymentMethod" class="form-control" [(ngModel)]="paymentMethod">
       <option value="CREDIT">Cartão de Crédito</option>
       <option value="DEBIT">Cartão de Débito</option>
-      <option value="BILLET">Boleto</option>
     </select>
   </div>
-  <div class="col-lg-8 col-md-8" *ngIf="isPaymentSelected && paymentMethod === 'BILLET'">
-    <button class="btn btn-primary pull-right" id="btnGenerateBillet" (click)="generateBillet()" style="margin-top: 25px;">Gerar Boleto</button>
+</div>
+
+<div class="row" *ngIf="billetGenerated" style="display: none">
+  <div>
+    <app-billet-payment [codeBar]="codeBar" [billetShipping]="billetShipping" [client]="client"
+                        [totalPayment]="totalPayment"></app-billet-payment>
   </div>
 </div>
 
 <div class="row" *ngIf="listSelectedBillToPayPayment.length > 0">
   <div *ngIf="paymentMethod === 'DEBIT' && isPaymentSelected">
-    <app-debit-card-payment [totalPayment]="totalPayment"></app-debit-card-payment>
+    <app-debit-card-payment [totalPayment]="totalPayment" [listBillToPayPayment]="listSelectedBillToPayPayment"></app-debit-card-payment>
   </div>
-
   <div *ngIf="paymentMethod === 'CREDIT' && isPaymentSelected">
     <app-recurrent-payment [listBillToPayPayment]="listSelectedBillToPayPayment" [totalPayment]="totalPayment"></app-recurrent-payment>
-  </div>
-
-  <div *ngIf="paymentMethod === 'BILLET' && isPaymentSelected">
-    <app-billet-payment [codeBar]="codeBar" [billetShipping]="billetShipping"
-                        [totalPayment]="totalPayment"></app-billet-payment>
   </div>
 </div>

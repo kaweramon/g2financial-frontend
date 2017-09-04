@@ -10,6 +10,8 @@ import {BillToPayPayment} from './bill-to-pay-payment';
 import {BilletShippingService} from './billet-payment/billet-shipping.service';
 import {BilletShipping} from './billet-payment/billet-shipping';
 import * as $ from 'jquery';
+import {ClientService} from '../../search-client/client.service';
+import {Client} from '../../search-client/client';
 
 @Component({
   selector: 'app-bills-to-pay',
@@ -28,10 +30,6 @@ export class BillsToPayComponent {
 
   public totalPayment = 0 ;
 
-  public maskValidDate = [/[0-9]/, /\d/, '/', /\d/, /\d/, /\d/, /\d/];
-
-  public maskSecurityCode = [/[0-9]/, /\d/, /\d/];
-
   public paymentMethod = '';
 
   public payment: Payment;
@@ -44,12 +42,18 @@ export class BillsToPayComponent {
 
   public billetShipping: BilletShipping;
 
+  public billetGenerated: boolean = false;
+
+  public client: Client = new Client();
+
   constructor(private route: ActivatedRoute, private service: BillToPayService, private elementRef:ElementRef,
-              private typeInterestService: TypeInterestChargeService, private billetShippingService: BilletShippingService) {
+              private typeInterestService: TypeInterestChargeService, private clientService: ClientService) {
     this.payment = new Payment();
     //TODO: remover
     this.paymentMethod = 'BILLET';
-    // this.isPaymentSelected = true;
+    this.clientService.view(this.route.snapshot.params["clientId"]).subscribe(client => {
+      this.client = client;
+    });
     this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(result => {
       this.listBillToPay = result;
       this.getListBillToPayPayment();
@@ -80,9 +84,6 @@ export class BillsToPayComponent {
       if (billToPayPayment.isChecked) {
         this.totalPayment += billToPayPayment.subTotal;
         this.listSelectedBillToPayPayment.push(billToPayPayment);
-      }
-      if (i == this.listBillToPayPayment.length - 1) {
-        this.generateCodeBar();
       }
     }
   }
@@ -132,63 +133,267 @@ export class BillsToPayComponent {
     }
   }
 
-  public generateBillet(): void {
+  public generateBillet(billetShipping: BilletShipping): void {
     $('#btnGenerateBillet').prop('disabled', true);
-    this.billetShippingService.getLastCounter().subscribe(result => {
-      let nextCounter = result + 1;
-      this.billetShipping = new BilletShipping();
-      this.billetShipping.counter = nextCounter;
-      for (let i = 0; i < (12 - nextCounter.toString().length); i++) {
-        this.ourNumber += "0";
+    this.billetShipping = billetShipping;
+    this.billetShipping.clientId = this.route.snapshot.params["clientId"];
+    this.billetShipping.isCancel = false;
+    let paymentTypes = "";
+    for (let i = 0; i < this.listSelectedBillToPayPayment.length; i++) {
+      if (i < this.listSelectedBillToPayPayment.length - 1) {
+        paymentTypes += this.listSelectedBillToPayPayment[i].description + ", ";
+      } else {
+        paymentTypes += this.listSelectedBillToPayPayment[i].description;
       }
-      this.ourNumber += nextCounter.toString();
-      //Calculo do digito Santander
-      let ourNumberArrayInverted = this.ourNumber.split("").reverse().join("");
-      let total = 0;
-      for (let j = 0; j < ourNumberArrayInverted.length; j++) {
-        if (j < 8) {
-          total += (parseInt(ourNumberArrayInverted[j]) * (j + 2));
-        } else if (j === 8) {
-          total += (parseInt(ourNumberArrayInverted[j]) * 2);
-        } else if (j === 9) {
-          total += (parseInt(ourNumberArrayInverted[j]) * 3);
-        } else if (j === 10) {
-          total += (parseInt(ourNumberArrayInverted[j]) * 4);
-        } else if (j === 11) {
-          total += (parseInt(ourNumberArrayInverted[j]) * 5);
-        }
-      }
-      let rest = "0";
-      if ((total / 11).toString().indexOf(".") !== -1) {
-        rest = (total / 11).toString().split(".")[1].split("")[0];
-      }
-      let digit = 11 - parseInt(rest);
-      this.ourNumber += "-" + digit;
-      this.billetShipping.ourNumber = this.ourNumber;
-      this.billetShipping.billValue = this.totalPayment;
-      this.billetShipping.clientId = this.route.snapshot.params["clientId"];
-      this.billetShipping.isCancel = false;
-      let paymentTypes = "";
-      for (let i = 0; i < this.listSelectedBillToPayPayment.length; i++) {
-        if (i < this.listSelectedBillToPayPayment.length - 1) {
-          paymentTypes += this.listSelectedBillToPayPayment[i].description + ", ";
-        } else {
-          paymentTypes += this.listSelectedBillToPayPayment[i].description;
-        }
-      }
-      this.billetShipping.chargingType = paymentTypes;
-      this.billetShipping.partialPayment = "NAO";
-      this.billetShipping.documentNumber = this.ourNumber.substring(
-        this.ourNumber.length - 7, this.ourNumber.length - 2);
-      this.billetShippingService.create(this.billetShipping).subscribe(result => {
-        console.log(JSON.stringify(result));
-      }, error => {
-        console.log(error);
-      });
+    }
+    this.billetShipping.chargingType = paymentTypes;
+    this.billetShipping.partialPayment = "NAO";
+    this.billetShipping.documentNumber = this.ourNumber.substring(
+      this.ourNumber.length - 7, this.ourNumber.length - 2);
+    this.billetGenerated = true;
+    this.generateCodeBarCaixa();
+    setTimeout(() => {
+      this.billetGenerated = true;
       this.generateQrBarCode();
-    }, error => {
-      console.log(error);
-    });
+      // this.printBillet();
+    }, 500);
+  }
+
+  private generateCodeBarCaixa(): void {
+    // Posição 1-3 -> Identificação do banco (104)
+    // Posição 4 -> Código da moeda (9 - Real)
+    // TODO: Posição 5 -> DV Geral do Código de Barras
+    let codeBarToReturn: string = "";
+    // Posição 06 - 09 -> Fator de Vencimento
+    let maturityFactor = this.getMaturityFactor(this.billetShipping.maturityDate);
+    let billetValueCalculated = this.getBilletCodeBarValue(this.billetShipping.billValue).toString();
+    // 20 – 25 6 9 (6) Código do Beneficiário
+    let benefictCode = "377192";
+    // 26 – 26 1 9 (1) DV do Código do Beneficiário
+    let dvBenefictCode = this.getVerifyDigitBeneficiaryCode(benefictCode);
+    // 27 – 29 3 9 (3) Nosso Número - Seqüência 1
+    codeBarToReturn += this.billetShipping.ourNumber.substring(0, 2);
+    // 30 – 30 1 9 (1) Constante 1
+    codeBarToReturn += "1";
+    // 31 – 33 3 9 (3) Nosso Número - Seqüência 2
+    codeBarToReturn += this.billetShipping.ourNumber.substring(3, 5);
+    // 34 – 34 1 9 (1) Constante 2
+    codeBarToReturn += "4";
+    // 35 – 43 9 9 (9) Nosso Número - Seqüência 3
+    codeBarToReturn += this.billetShipping.ourNumber.substring(6, this.billetShipping.ourNumber.length - 1);
+    // 44 – 44 1 9 (1) DV do Campo Livre
+    // Código do beneficiário -> 377192
+    let dvFreeCamp = this.getFreeCampCodeBar("377192", dvBenefictCode.toString(), this.billetShipping.ourNumber);
+    let generalVerifyDigit = this.getVerifyDigitGeneral(maturityFactor, billetValueCalculated, benefictCode,
+      dvBenefictCode.toString(), this.billetShipping.ourNumber, dvFreeCamp);
+    let field1 = "1049" + benefictCode.charAt(0) + "." + benefictCode.substring(1,5) +
+        this.getVerifyDigitFields123("1049" + benefictCode.charAt(0) + benefictCode.substring(1,5));
+    let field2 = benefictCode.charAt(benefictCode.length - 1) + dvBenefictCode + this.billetShipping.ourNumber.substring(0,3)
+      + ".1" + this.billetShipping.ourNumber.substring(3,6) + "4" +
+      this.getVerifyDigitFields123(benefictCode.charAt(benefictCode.length - 1) + dvBenefictCode +
+        this.billetShipping.ourNumber.substring(0,3) + "1" + this.billetShipping.ourNumber.substring(3,6) + "4");
+    let field3 = this.billetShipping.ourNumber.substring(6, 11) + "." +
+      this.billetShipping.ourNumber.substring(11, this.billetShipping.ourNumber.length) + dvFreeCamp +
+      this.getVerifyDigitFields123(this.billetShipping.ourNumber.substring(6, 11) +
+        this.billetShipping.ourNumber.substring(11, this.billetShipping.ourNumber.length) + dvFreeCamp);
+
+    codeBarToReturn = field1 + " " + field2 + " " + field3 + " " + generalVerifyDigit + " " + maturityFactor + billetValueCalculated;
+
+    this.billetShipping.ourNumber = "14" + this.billetShipping.ourNumber + "-" +
+      this.getVerifyDigitOurNumber("14" + this.billetShipping.ourNumber);
+
+    this.codeBar = codeBarToReturn;
+
+  }
+
+  // CÁLCULO DO DÍGITO VERIFICADOR DA LINHA DIGITÁVEL (CAMPOS 1, 2 E 3)
+  private getVerifyDigitFields123(strToCalc: string): number {
+    let toReturn: number;
+    let total: number = 0;
+    strToCalc = strToCalc.split("").reverse().join("");
+    for (let i = 0; i < strToCalc.length; i++) {
+      if ( i % 2 == 0 || i == 0) {
+        if ((parseInt(strToCalc[i]) * 2).toString().split("").length == 2) {
+          let alg1 = parseInt((parseInt(strToCalc[i]) * 2).toString().split("")[0]);
+          let alg2 = parseInt((parseInt(strToCalc[i]) * 2).toString().split("")[1]);
+          total += (alg1 + alg2);
+        } else {
+          total += parseInt(strToCalc[i]) * 2;
+        }
+      } else {
+        total += parseInt(strToCalc[i]);
+      }
+    }
+    if (total < 10) {
+      toReturn = 10 - total;
+    }
+    let restAux = (total / 10).toString().split(".");
+    let rest = parseInt(restAux[1].split("")[restAux[1].split("").length-1]);
+
+    if (rest == 0) {
+      toReturn = 0;
+    } else {
+      toReturn = 10 - rest;
+    }
+    return toReturn;
+  }
+
+  //  CALCULO DO DÍGITO VERIFICADOR GERAL DO CÓDIGO DE BARRAS
+  private getVerifyDigitGeneral(maturityFactor: string, billetValue: string, benefictCode: string, dvBenefictCode: string,
+                                ourNumber: string, dvFreeCamp: number): number {
+    let toReturn: number;
+    let calcStrArray = ("1049" + maturityFactor + billetValue + benefictCode + dvBenefictCode + ourNumber.substring(0,3)
+      + "1" + ourNumber.substring(3,6) + "4" + ourNumber.substring(6 , ourNumber.length) + dvFreeCamp).split("");
+    let total: number = 0;
+    for (let i = 0; i < calcStrArray.length; i++) {
+      if (i == 0 || i == 8 || i == 16 || i == 24 || i == 32 || i == 40) {
+        total += parseInt(calcStrArray[i]) * 4;
+      }
+      if (i == 1 || i == 9 || i == 17 || i == 25 || i == 33 || i == 41) {
+        total += parseInt(calcStrArray[i]) * 3;
+      }
+      if (i == 2 || i == 10 || i == 18 || i == 26 || i == 34 || i == 42) {
+        total += parseInt(calcStrArray[i]) * 2;
+      }
+      if (i == 3 || i == 11 || i == 19 || i == 27 || i == 35 || i == 43) {
+        total += parseInt(calcStrArray[i]) * 9;
+      }
+      if (i == 4 || i == 12 || i == 20 || i == 28 || i == 36) {
+        total += parseInt(calcStrArray[i]) * 8;
+      }
+      if (i == 5 || i == 13 || i == 21 || i == 29 || i == 37) {
+        total += parseInt(calcStrArray[i]) * 7;
+      }
+      if (i == 6 || i == 14 || i == 22 || i == 30 || i == 38) {
+        total += parseInt(calcStrArray[i]) * 6;
+      }
+      if (i == 7 || i == 15 || i == 23 || i == 31 || i == 39) {
+        total += parseInt(calcStrArray[i]) * 5;
+      }
+    }
+    let restAux = (total / 11).toString().split(".");
+    let rest: number;
+    if (restAux[1] === undefined) {
+      toReturn = 1;
+    } else {
+      rest = (parseInt(restAux[1].split("")[0]) + 1);
+    }
+
+    if (rest !== undefined) {
+      if ((11 - rest) > 9) {
+        toReturn = 1;
+      } else {
+        toReturn = 11 - rest;
+      }
+    }
+
+    return toReturn;
+  }
+
+  // Cálculo do fator de vencimento Posição: 06-09 - CAIXA
+  private getMaturityFactor(date: any): any {
+    return moment(date).diff(moment("1997-10-07"), 'days');
+  }
+
+  // Cálculo do digito verificador do código do beneficiário - CAIXA
+  private getVerifyDigitBeneficiaryCode(beneficiaryCode: string): number {
+    let toReturn: number;
+    let beneficiaryCodeInverted = beneficiaryCode.split("").reverse().join("");
+    let total: number = 0;
+    for (let i = 0; i < beneficiaryCodeInverted.length; i++) {
+      total += (parseInt(beneficiaryCodeInverted[i]) * (i + 2));
+    }
+    let rest: number = 0;
+    if (total >= 11) {
+      let restAux = (total / 11).toString().split(".");
+      rest = parseInt(restAux[1].split("")[restAux[1].split("").length-1]);
+      toReturn = (11 - rest);
+    } else {
+      toReturn = (11 - total);
+    }
+    if (toReturn > 9) {
+      return 0;
+    }
+    return toReturn;
+  }
+
+  // CAMPO LIVRE DO CÓDIGO DE BARRAS
+  private getFreeCampCodeBar(beneficCode: string, dvBenefictCode: string, ourNumber: string): number {
+    let result: number;
+    let strCalcFreeCamp = beneficCode + dvBenefictCode + ourNumber.substring(0,3) + "1" + ourNumber.substring(3,6) + "4" +
+      ourNumber.substring(6 , ourNumber.length);
+    let strInverted = strCalcFreeCamp.split("").reverse().join("");
+    let multiplicationIndex: number = 2;
+    let total: number = 0;
+    for (let i = 0; i < strInverted.length; i++) {
+      if (i == 8 || i == 16) {
+        multiplicationIndex = 2;
+      }
+      total += (parseInt(strInverted[i])) * multiplicationIndex;
+      multiplicationIndex++;
+    }
+    if (total < 11) {
+      result = total - 11;
+    } else {
+      let divisionResult = (total / 11).toString().split(".");
+      let rest: number;
+      if (divisionResult[1] !== undefined) {
+        if (divisionResult[1].split("").length > 1) {
+          rest = parseInt(divisionResult[1].split("")[0]) + 1;
+        } else {
+          rest = (parseInt(divisionResult[1].split("")[0]));
+        }
+      } else {
+        rest = 0;
+      }
+      result = 11 - rest;
+    }
+    return result;
+  }
+
+  // Cálculo do valor (Posição: 10-19) - CAIXA
+  private getBilletCodeBarValue(billValue: number): string {
+    let toReturn: string = "";
+    let cleanValueStr: string = "";
+    if (billValue.toString().indexOf(".") == -1 && billValue.toString().indexOf(",") == -1) {
+      for (let i = 0; i < (8 - billValue.toString().length);i++) {
+        toReturn += "0";
+      }
+      toReturn += billValue;
+      toReturn += "00";
+    } else {
+      cleanValueStr = billValue.toString().replace(".", "").replace(",", "");
+      for (let i = 0; i < (10 - cleanValueStr.length); i++) {
+        toReturn += "0";
+      }
+      toReturn += cleanValueStr;
+    }
+    return toReturn;
+  }
+
+  private getVerifyDigitOurNumber(ourNumber: string): number {
+    let toReturn: number;
+
+    let ourNumberInverted = ourNumber.split("").reverse().join("");
+
+    let total = 0;
+    let multiplicationIndex = 2;
+    for (let i = 0; i < ourNumberInverted.length; i++) {
+      if (i == 8 || i == 16) {
+        multiplicationIndex = 2;
+      }
+      total += parseInt(ourNumberInverted[i]) * multiplicationIndex;
+      multiplicationIndex++;
+    }
+    let rest: number;
+    let restAux = (total / 11).toString().split(".");
+    rest = ((parseInt(restAux[1].split("").pop())) + 1);
+    if ((11 - rest) > 9) {
+      toReturn = 0;
+    } else {
+      toReturn = 11 - rest;
+    }
+    return toReturn;
   }
 
   private generateCodeBar(): void {
@@ -271,10 +476,8 @@ export class BillsToPayComponent {
         numberToCalc = 2;
       }
     }
-    console.log(totalFourthGroup);
     let verifyDigit = ((totalFourthGroup * 10) / 11).toString().split(".")[1];
     let numberVerifyDigit = 0;
-    console.log(verifyDigit);
     if (verifyDigit !== undefined) {
       if (verifyDigit.split("").length > 1) {
         if (parseInt(verifyDigit.split("")[1]) > 5){
@@ -290,6 +493,11 @@ export class BillsToPayComponent {
     let codeBarFifthGroup = factorMaturity + nominalValue;
     this.codeBar = codeBarFirstGroup + " " + codeBarSecondGroup + " " + codeBarThirdGroup + " " + numberVerifyDigit + " " + codeBarFifthGroup;
     console.log("Código de Barras: " + this.codeBar);
+    console.log(this.getMaturityFactor('2006-08-23'));
+    console.log(this.getBilletCodeBarValue(this.totalPayment));
+    console.log("dig cod. beneficiário: " + this.getVerifyDigitBeneficiaryCode("005507"));
+    //Código do beneficiário: 45000
+    //DV do Código do Beneficiário = 0
   }
 
   private generateQrBarCode(): void {
@@ -304,6 +512,7 @@ export class BillsToPayComponent {
 
   public printBillet(): void {
     // tablebillet
+
     let printContents, popupWin;
     printContents = document.getElementById('tablebillet').innerHTML;
     popupWin = window.open('', '_blank', 'top=0,left=0,height=100%,width=auto');
@@ -315,8 +524,8 @@ export class BillsToPayComponent {
           .logo{
   text-align: center; height: 10mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000
 }
-.logo{
-  text-align: center; height: 10mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000
+.img-logo {
+  content: url('../../../assets/images/logo_caixa.png');
 }
 .bankCode {
   font-size: 5mm; font-family: arial, verdana; font-weight : bold;
@@ -329,17 +538,23 @@ export class BillsToPayComponent {
   /*border-bottom: 1.2mm solid #000000; border-right: 1.2mm solid #000000;*/
 }
 .billetNumber {
-  font-size: 5mm; font-family: arial, verdana; font-weight : bold;
+  font-size: 3.2mm; font-family: arial, verdana; font-weight : bold;
   text-align: center; vertical-align: bottom; padding-bottom : 1mm;
+  border-bottom: 1mm solid #000000;
 }
 .billetRightHeader {
-  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; border-bottom: 1mm solid #000000
+  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;
+  border-bottom: 1mm solid #000000; font-weight : bold;
 }
 .billetRightHeader2 {
   font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;
 }
 .billetRightField {
-  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; border-left: 0.15mm solid #000000;
+  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;
+  border-left: 0.15mm solid #000000;
+}
+.billetRightFieldBorderNone {
+  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;
 }
 .billetLeftField2 {
   font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; border-left: 0.15mm solid #000000;
@@ -348,22 +563,34 @@ export class BillsToPayComponent {
   font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;
 }
 .billetLeftValue {
-  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;
+  font-size: 0.29cm; font-family: arial, verdana; padding-left : 1mm;
+  border-left: 0.15mm solid #000000; border-bottom: 0.15mm solid #000000;
+  font-weight: bold;
+}
+.billetLeftValueBorderNone {
+  font-size: 0.29cm; font-family: arial, verdana; padding-left : 1mm;
+  font-weight: bold;
 }
 .billetLeftValue2 {
   font-size: 3mm; font-family: arial, verdana; padding-left : 1mm;
   text-align: center; font-weight: bold; border-left: 0.15mm solid #000000;
   border-bottom: 0.15mm solid #000000;
 }
+.billetLeftValue3 {
+  font-size: 0.29cm; font-family: arial, verdana; padding-left : 1mm;
+  text-align: left; font-weight: bold; border-left: 0.15mm solid #000000;
+}
 .billetRightTextValue {
-  font-size: 3mm; font-family: arial, verdana; text-align:right;
-  padding-right: 1mm; font-weight: bold; border-left: 0.15mm solid #000000;
-  border-bottom: 0.15mm solid #000000;
+  font-size: 0.29cm; font-family: arial, verdana; text-align:right;
+  padding-right: 1mm; font-weight: bold; border-left: 0.15mm solid #000000; border-bottom: 0.15mm solid #000000;
+}
+.billetLeftTextValue2 {
+  font-size: 0.29cm; font-family: arial, verdana;
+  padding-left: 1mm; font-weight: bold; border-left: 0.15mm solid #000000;
 }
 .tr-border-bottom {
   border-bottom: 0.15mm solid #000000;
 }
-
 </style>
           <title>Comprovante</title>
         </head>

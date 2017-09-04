@@ -32,6 +32,9 @@ var bill_to_pay_payment_service_1 = require("./financial/bills-to-pay/bill-to-pa
 var cielo_payment_service_1 = require("./financial/bills-to-pay/cielo-payment.service");
 var ng2_slim_loading_bar_1 = require("ng2-slim-loading-bar");
 var billet_shipping_service_1 = require("./financial/bills-to-pay/billet-payment/billet-shipping.service");
+var core_2 = require("@angular/core");
+var for_sale_component_1 = require("./financial/for-sale/for-sale.component");
+var ng2_currency_mask_1 = require("ng2-currency-mask");
 var AppModule = (function () {
     function AppModule() {
     }
@@ -48,7 +51,8 @@ AppModule = __decorate([
             debit_card_payment_component_1.DebitCardPaymentComponent,
             credit_card_payment_component_1.CreditCardPaymentComponent,
             billet_payment_component_1.BilletPaymentComponent,
-            recurrent_payment_component_1.RecurrentPaymentComponent
+            recurrent_payment_component_1.RecurrentPaymentComponent,
+            for_sale_component_1.ForSaleComponent
         ],
         imports: [
             platform_browser_1.BrowserModule,
@@ -60,10 +64,11 @@ AppModule = __decorate([
             app_routes_1.routing,
             ng2_toasty_1.ToastyModule.forRoot(),
             ng2_slim_loading_bar_1.SlimLoadingBarModule.forRoot(),
-            ngx_bootstrap_1.ModalModule.forRoot()
+            ngx_bootstrap_1.ModalModule.forRoot(),
+            ng2_currency_mask_1.CurrencyMaskModule
         ],
         providers: [client_service_1.ClientService, bill_to_pay_service_1.BillToPayService, type_interest_charge_service_1.TypeInterestChargeService, bill_to_pay_amounts_paid_service_1.BillToPayAmountsPaidService,
-            bill_to_pay_payment_service_1.BillToPayPaymentService, cielo_payment_service_1.CieloPaymentService, billet_shipping_service_1.BilletShippingService],
+            bill_to_pay_payment_service_1.BillToPayPaymentService, cielo_payment_service_1.CieloPaymentService, billet_shipping_service_1.BilletShippingService, { provide: core_2.LOCALE_ID, useValue: 'pt-BR' }],
         bootstrap: [app_component_1.AppComponent]
     })
 ], AppModule);

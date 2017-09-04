@@ -24,4 +24,6 @@ export class CieloPayment {
   public type: string;
   public cieloPaymentCards: CieloPaymentCards;
   public clientId: number;
+  public isForSale: boolean;
+  public description: string;
 }

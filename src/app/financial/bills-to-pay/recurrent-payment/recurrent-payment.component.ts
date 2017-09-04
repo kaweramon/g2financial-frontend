@@ -10,7 +10,6 @@ import {BillToPayAmountsPaidService} from '../bill-to-pay-amounts-paid.service';
 import {BillToPayPaymentService} from '../bill-to-pay-payment.service';
 import {CieloPaymentService} from '../cielo-payment.service';
 import {CieloPayment} from '../cielo-payment';
-import {CieloPaymentCards} from '../cielo-payment-cards';
 import {SlimLoadingBarService} from 'ng2-slim-loading-bar';
 import * as $ from 'jquery';
 import {ToastyConfig, ToastyService} from 'ng2-toasty';
@@ -42,7 +41,6 @@ export class RecurrentPaymentComponent {
 
   @ViewChild('modalReceipt')
   public modalReceipt: ModalDirective;
-
 
   public checkFuturePayments: boolean;
 
@@ -167,48 +165,16 @@ export class RecurrentPaymentComponent {
   }
 
   private saveListBillToPayPayment(): void {
-    this.billToPayPaymentService.updateList(this.listBillToPayPayment).subscribe(result => {
+    this.billToPayPaymentService.updateList(this.listBillToPayPayment).subscribe(() => {
     }, error => {
       this.showMsgError(error.join().status, error.json().message);
     })
   }
 
   private saveCieloPayment(cieloPaymentReturn: any, cardToken: string): void {
-    this.cieloPayment = new CieloPayment();
-    this.cieloPayment.cieloPaymentCards = new CieloPaymentCards();
+    this.cieloPayment = Constants.getCiloPaymentConverted(cieloPaymentReturn, cardToken, false);
     this.cieloPayment.clientId = this.route.snapshot.params['clientId'];
-    this.cieloPayment.serviceTaxAmount = cieloPaymentReturn.Payment.ServiceTaxAmount !== null ? cieloPaymentReturn.Payment.ServiceTaxAmount : 0.0;
-    this.cieloPayment.installments = cieloPaymentReturn.Payment.Installments;
-    this.cieloPayment.interest = cieloPaymentReturn.Payment.Interest;
-    this.cieloPayment.capture = cieloPaymentReturn.Payment.Capture;
-    this.cieloPayment.recurrent = cieloPaymentReturn.Payment.Recurrent;
-    this.cieloPayment.amount = cieloPaymentReturn.Payment.Amount;
-    this.cieloPayment.authenticate = cieloPaymentReturn.Payment.Authenticate;
-    this.cieloPayment.authorizationCode = cieloPaymentReturn.Payment.AuthorizationCode;
-    this.cieloPayment.authenticate = cieloPaymentReturn.Payment.Authenticate;
-    this.cieloPayment.recurrent = cieloPaymentReturn.Payment.Recurrent;
-    //Credit Card
-    this.cieloPayment.cieloPaymentCards.cardToken = cardToken !== undefined ? cardToken : '';
-    this.cieloPayment.cieloPaymentCards.cardNumber = cieloPaymentReturn !== null ? cieloPaymentReturn.Payment.CreditCard.CardNumber : "";
-    this.cieloPayment.cieloPaymentCards.holder = cieloPaymentReturn.Payment.CreditCard.Holder;
-    this.cieloPayment.cieloPaymentCards.expirationDate = cieloPaymentReturn.Payment.CreditCard.ExpirationDate;
-    this.cieloPayment.cieloPaymentCards.saveCard = cieloPaymentReturn.Payment.CreditCard.SaveCard;
-    this.cieloPayment.cieloPaymentCards.brand = cieloPaymentReturn.Payment.CreditCard.Brand;
-    this.cieloPayment.tid = cieloPaymentReturn.Payment.Tid;
-    this.cieloPayment.proofOfSale = cieloPaymentReturn.Payment.ProofOfSale;
-    this.cieloPayment.authorizationCode = cieloPaymentReturn.Payment.AuthorizationCode;
-    this.cieloPayment.softDescriptor = cieloPaymentReturn.Payment.SoftDescriptor;
-    this.cieloPayment.provider = cieloPaymentReturn.Payment.Provider;
-    this.cieloPayment.paymentId = cieloPaymentReturn.Payment.PaymentId;
-    this.cieloPayment.type = cieloPaymentReturn.Payment.Type;
-    this.cieloPayment.amount = cieloPaymentReturn.Payment.Amount;
-    this.cieloPayment.currency = cieloPaymentReturn.Payment.Currency;
-    this.cieloPayment.country = cieloPaymentReturn.Payment.Country;
-    this.cieloPayment.returnCode = cieloPaymentReturn.Payment.ReturnCode;
-    this.cieloPayment.returnMessage = cieloPaymentReturn.Payment.ReturnMessage;
-    this.cieloPayment.status = cieloPaymentReturn.Payment.Status;
-    this.cieloPayment.cieloPaymentCards.type = cieloPaymentReturn.Payment.Type;
-    this.cieloPaymentService.create(this.cieloPayment).subscribe(result => {
+    this.cieloPaymentService.create(this.cieloPayment, false).subscribe(result => {
       this.stopSlimLoadingBar();
       this.modalReceipt.show();
     }, error => {
@@ -242,7 +208,8 @@ export class RecurrentPaymentComponent {
 
   public getLast4DigitsFromCard(): string {
     if (this.payment.CreditCard.CardNumber !== undefined) {
-      return this.payment.CreditCard.CardNumber.substr(this.payment.CreditCard.CardNumber.length-4, this.payment.CreditCard.CardNumber.length-1);
+      return this.payment.CreditCard.CardNumber.substr(this.payment.CreditCard.CardNumber.length-4,
+        this.payment.CreditCard.CardNumber.length-1);
     } else {
       return '';
     }
@@ -276,11 +243,21 @@ export class RecurrentPaymentComponent {
       <html>
         <head>
           <title>Comprovante</title>
+          <style>
+            #div-payment-receipt {
+              float: none;
+              margin: 0 auto;
+              background-color: #EBFAFF
+            }
+            p {
+              font-size: 11px;
+              margin: 0;
+            }
+          </style>
         </head>
     <body onload="window.print();window.close()">${printContents}</body>
       </html>`
     );
     popupWin.document.close();
   }
-
 }
