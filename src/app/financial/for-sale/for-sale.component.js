@@ -5,14 +5,18 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
 var payment_1 = require("../bills-to-pay/payment");
 var $ = require("jquery");
 var moment = require("moment");
 var constants_1 = require("../../util/constants");
+var forms_1 = require("@angular/forms");
 var ForSaleComponent = (function () {
-    function ForSaleComponent(cieloPaymentService, billToPayService, route, toastyService, toastyConfig, slimLoadingBarService, clientService) {
+    function ForSaleComponent(cieloPaymentService, billToPayService, route, toastyService, toastyConfig, slimLoadingBarService, clientService, formBuilder) {
         var _this = this;
         this.cieloPaymentService = cieloPaymentService;
         this.billToPayService = billToPayService;
@@ -26,12 +30,62 @@ var ForSaleComponent = (function () {
         this.payment = new payment_1.Payment();
         this.toastyConfig.theme = 'bootstrap';
         this.toastyConfig.position = 'top-right';
+        this.formBuilder = formBuilder;
+        this.initFormBuilder();
+        this.initFormBuilderDebitCard();
+        this.initFormBuilderCreditCard();
         this.clientService.view(this.route.snapshot.params['clientId']).subscribe(function (client) {
             _this.client = client;
         });
     }
+    ForSaleComponent.prototype.initFormBuilder = function () {
+        this.formForSale = this.formBuilder.group({
+            'paymentDescription': [this.paymentDescription, [forms_1.Validators.required, forms_1.Validators.minLength(3)]],
+            'amountString': [this.amountString, [forms_1.Validators.required]],
+            'paymentMethod': [this.paymentMethod]
+        });
+    };
+    ForSaleComponent.prototype.initFormBuilderCreditCard = function () {
+        this.formForSaleCreditCard = this.formBuilder.group({
+            'creditCardBrand': [this.payment.CreditCard.Brand, [forms_1.Validators.required]],
+            'creditCardNumber': [this.payment.CreditCard.CardNumber, [forms_1.Validators.required]],
+            'creditCardExpirationDate': [this.payment.CreditCard.ExpirationDate, [forms_1.Validators.required]],
+            'creditCardSecurityCode': [this.payment.CreditCard.SecurityCode, [forms_1.Validators.required]],
+            'creditCardHolder': [this.payment.CreditCard.Holder, [forms_1.Validators.required]],
+            'creditCardInstallments': [this.payment.Installments, [forms_1.Validators.required]]
+        });
+    };
+    ForSaleComponent.prototype.initFormBuilderDebitCard = function () {
+        this.formForSaleDebitCard = this.formBuilder.group({
+            'debitCardBrand': [this.payment.DebitCard.Brand, [forms_1.Validators.required]],
+            'debitCardNumber': [this.payment.DebitCard.CardNumber, [forms_1.Validators.required]],
+            'debitCardExpirationDate': [this.payment.DebitCard.ExpirationDate, [forms_1.Validators.required]],
+            'debitCardSecurityCode': [this.payment.DebitCard.SecurityCode, [forms_1.Validators.required]],
+            'debitCardHolder': [this.payment.DebitCard.Holder, [forms_1.Validators.required]],
+        });
+    };
     ForSaleComponent.prototype.doPayment = function () {
         var _this = this;
+        var amountSplited = this.amountString.toString().split(".");
+        // Exemplo: R$ 1
+        if (this.amountString.toString().length == 1) {
+            this.payment.Amount = parseInt(this.amountString + "00");
+        }
+        // Ex: 0,01
+        if (this.amountString.toString().indexOf("0.0") !== -1 && this.amountString.toString().length === 4) {
+            this.payment.Amount = parseInt(this.amountString.toString().charAt(3));
+        }
+        // Exemplo: R$ 0,1
+        if (this.amountString.toString().length === 3 && amountSplited !== undefined && amountSplited.length === 2) {
+            this.payment.Amount = parseInt(amountSplited[0] + amountSplited[1] + "0");
+        }
+        if (this.amountString.toString().indexOf('.') === -1) {
+            this.payment.Amount = parseInt(this.amountString.toString() + "00");
+        }
+        if (this.amountString.toString().length > 3 && amountSplited !== undefined && amountSplited.length === 2) {
+            this.payment.Amount = parseInt(amountSplited[0] + amountSplited[1]);
+        }
+        console.log("Amount: " + this.payment.Amount);
         if (this.paymentMethod === 'CREDIT') {
             $('#btnDoPaymentForSaleCreditCard').prop("disabled", true);
             this.payment.Type = "CreditCard";
@@ -53,7 +107,8 @@ var ForSaleComponent = (function () {
                 Payment: copyPayment
             };
             this.billToPayService.paymentCreditCard(creditCardPayment).subscribe(function (cieloPaymentReturn) {
-                if (cieloPaymentReturn.Payment.ReturnCode === "4") {
+                console.log(cieloPaymentReturn);
+                if (cieloPaymentReturn.Payment.Status === 1 || cieloPaymentReturn.Payment.Status === 2) {
                     var toastOptions = {
                         title: "Pagamento Realizado",
                         showClose: true,
@@ -65,13 +120,16 @@ var ForSaleComponent = (function () {
                 else {
                     _this.stopSlimLoadingBar();
                     _this.showMsgError(parseInt(cieloPaymentReturn.Payment.ReturnCode), cieloPaymentReturn.Payment.ReturnMessage);
+                    $('#btnDoPaymentForSaleCreditCard').prop("disabled", false);
                 }
                 $('#btnDoPaymentForSaleCreditCard').prop("disabled", false);
             }, function (error) {
                 _this.handleError(error);
+                $('#btnDoPaymentForSaleCreditCard').prop("disabled", false);
             });
         }
         else if (this.paymentMethod === 'DEBIT') {
+            $('#btnDoPaymentForSaleDebitCard').prop("disabled", true);
             var debitPayment = {
                 MerchantOrderId: "2014121201",
                 Customer: {
@@ -80,20 +138,34 @@ var ForSaleComponent = (function () {
                 Payment: {
                     Type: "DebitCard",
                     ReturnUrl: "http://localhost:4200",
-                    Amount: 5,
+                    Amount: this.payment.Amount,
                     DebitCard: this.payment.DebitCard
                 }
             };
             this.billToPayService.paymentDebitCard(debitPayment).subscribe(function (cieloPaymentReturn) {
-                var toastOptions = {
-                    title: "Pagamento Realizado",
-                    showClose: true,
-                    timeout: 4000
-                };
-                _this.toastyService.success(toastOptions);
-                _this.saveCieloPayment(cieloPaymentReturn, undefined);
+                console.log(cieloPaymentReturn);
+                if (cieloPaymentReturn.Payment.Status === 1 || cieloPaymentReturn.Payment.Status === 2) {
+                    var toastOptions = {
+                        title: "Pagamento Realizado",
+                        showClose: true,
+                        timeout: 4000
+                    };
+                    _this.toastyService.success(toastOptions);
+                    _this.saveCieloPayment(cieloPaymentReturn, undefined);
+                    $('#btnDoPaymentForSaleDebitCard').prop("disabled", false);
+                }
+                else {
+                    var toastOptions = {
+                        title: cieloPaymentReturn.Payment.ReturnMessage,
+                        showClose: true,
+                        timeout: 4000
+                    };
+                    _this.toastyService.error(toastOptions);
+                    $('#btnDoPaymentForSaleDebitCard').prop("disabled", false);
+                }
             }, function (error) {
                 _this.handleError(error);
+                $('#btnDoPaymentForSaleDebitCard').prop("disabled", false);
             });
         }
     };
@@ -109,7 +181,6 @@ var ForSaleComponent = (function () {
         else if (error.json() !== undefined) {
             this.showMsgError(error.json().Code, error.json().Message);
         }
-        $('#btnDoPayment').prop("disabled", false);
     };
     ForSaleComponent.prototype.stopSlimLoadingBar = function () {
         this.slimLoadingBarService.stop();
@@ -194,7 +265,8 @@ ForSaleComponent = __decorate([
         selector: 'app-for-sale',
         templateUrl: './for-sale.component.html',
         styleUrls: ['./for-sale.component.css']
-    })
+    }),
+    __param(7, core_1.Inject(forms_1.FormBuilder))
 ], ForSaleComponent);
 exports.ForSaleComponent = ForSaleComponent;
 //# sourceMappingURL=for-sale.component.js.map

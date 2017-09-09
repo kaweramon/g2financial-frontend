@@ -14,7 +14,7 @@ var BillToPayService = (function () {
         this.urlBillToPay = 'http://localhost:8080/bill-to-pay/';
         this.urlSandBox = 'https://apisandbox.cieloecommerce.cielo.com.br/1/sales';
         this.urlSandBoxCard = 'https://apisandbox.cieloecommerce.cielo.com.br/1/card';
-        this.urlCieloProduction = "https://apiquery.cieloecommerce.cielo.com.br/";
+        this.urlCieloProduction = "https://api.cieloecommerce.cielo.com.br/1/sales/";
         this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
         this.params = new http_1.URLSearchParams();
     }
@@ -29,16 +29,21 @@ var BillToPayService = (function () {
         return this.http.post(this.urlCieloProduction, payment, { headers: this.headers, search: this.params }).map(function (res) { return res.json(); });
     };
     BillToPayService.prototype.paymentDebitCard = function (payment) {
+        this.params = new http_1.URLSearchParams();
         this.setMerchantIdAndKey();
-        return this.http.post(this.urlCieloProduction, payment, { headers: this.headers }).map(function (res) { return res.json(); });
+        console.log(payment);
+        console.log(this.params);
+        return this.http.post(this.urlCieloProduction, payment, { headers: this.headers, search: this.params }).map(function (res) { return res.json(); });
     };
     BillToPayService.prototype.createCardToken = function (cardTokenRequest) {
         this.setMerchantIdAndKey();
         return this.http.post(this.urlSandBoxCard, cardTokenRequest, { headers: this.headers }).map(function (res) { return res.json(); });
     };
     BillToPayService.prototype.setMerchantIdAndKey = function () {
-        this.headers.set('MerchantId', 'fe17c77b-df00-4ad4-a8e7-378dfc41cf96');
-        this.headers.set('MerchantKey', 'TCCBVGXPLLJHJFGQBFPDUWFBNSPLLJTAZAMXJWJK');
+        /*this.headers.set('MerchantId', 'fe17c77b-df00-4ad4-a8e7-378dfc41cf96');
+        this.headers.set('MerchantKey', 'TCCBVGXPLLJHJFGQBFPDUWFBNSPLLJTAZAMXJWJK');*/
+        this.headers.set('MerchantId', '75668c3e-f66f-41b2-83ef-77f0d94e32f1');
+        this.headers.set('MerchantKey', 'KbKRY5d1iNuoTsOgpzKAwuFtfyyET6lIc6QKBvjH');
     };
     return BillToPayService;
 }());

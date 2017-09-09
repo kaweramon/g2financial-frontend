@@ -1,4 +1,4 @@
-import {Component, ViewChild} from '@angular/core';
+import {Component, Inject, ViewChild} from '@angular/core';
 import {Payment} from '../bills-to-pay/payment';
 import {CieloPaymentService} from '../bills-to-pay/cielo-payment.service';
 import {BillToPayService} from '../bills-to-pay/bill-to-pay.service';
@@ -13,6 +13,7 @@ import {Constants} from '../../util/constants';
 import {CreditCard} from '../bills-to-pay/credit-card-payment/credit-card';
 import {CieloPayment} from '../bills-to-pay/cielo-payment';
 import {ModalDirective} from 'ngx-bootstrap';
+import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 
 @Component({
   selector: 'app-for-sale',
@@ -38,18 +39,82 @@ export class ForSaleComponent {
 
   public cieloPayment: CieloPayment;
 
+  public amountString: any;
+
+  public formForSale: FormGroup;
+
+  public formForSaleDebitCard: FormGroup;
+
+  public formForSaleCreditCard: FormGroup;
+
+  private formBuilder: FormBuilder;
+
   constructor(private cieloPaymentService: CieloPaymentService, private billToPayService: BillToPayService,
               private route: ActivatedRoute, private toastyService: ToastyService, private toastyConfig: ToastyConfig,
-              private slimLoadingBarService: SlimLoadingBarService, private clientService: ClientService) {
+              private slimLoadingBarService: SlimLoadingBarService, private clientService: ClientService,
+              @Inject(FormBuilder) formBuilder: FormBuilder) {
     this.payment = new Payment();
     this.toastyConfig.theme = 'bootstrap';
     this.toastyConfig.position = 'top-right';
+    this.formBuilder = formBuilder;
+    this.initFormBuilder();
+    this.initFormBuilderDebitCard();
+    this.initFormBuilderCreditCard();
     this.clientService.view(this.route.snapshot.params['clientId']).subscribe(client => {
       this.client = client;
     })
   }
 
+  private initFormBuilder(): void {
+    this.formForSale = this.formBuilder.group({
+      'paymentDescription': [this.paymentDescription, [Validators.required, Validators.minLength(3)]],
+      'amountString': [this.amountString, [Validators.required]],
+      'paymentMethod': [this.paymentMethod]
+    });
+  }
+
+  private initFormBuilderCreditCard() : void {
+    this.formForSaleCreditCard = this.formBuilder.group({
+      'creditCardBrand': [this.payment.CreditCard.Brand, [Validators.required]],
+      'creditCardNumber': [this.payment.CreditCard.CardNumber, [Validators.required]],
+      'creditCardExpirationDate': [this.payment.CreditCard.ExpirationDate, [Validators.required]],
+      'creditCardSecurityCode': [this.payment.CreditCard.SecurityCode, [Validators.required]],
+      'creditCardHolder': [this.payment.CreditCard.Holder, [Validators.required]],
+      'creditCardInstallments': [this.payment.Installments, [Validators.required]]
+    });
+  }
+
+  private initFormBuilderDebitCard(): void {
+    this.formForSaleDebitCard = this.formBuilder.group({
+      'debitCardBrand': [this.payment.DebitCard.Brand, [Validators.required]],
+      'debitCardNumber': [this.payment.DebitCard.CardNumber, [Validators.required]],
+      'debitCardExpirationDate': [this.payment.DebitCard.ExpirationDate, [Validators.required]],
+      'debitCardSecurityCode': [this.payment.DebitCard.SecurityCode, [Validators.required]],
+      'debitCardHolder': [this.payment.DebitCard.Holder, [Validators.required]],
+    });
+  }
+
   public doPayment() {
+    let amountSplited = this.amountString.toString().split(".");
+    // Exemplo: R$ 1
+    if (this.amountString.toString().length == 1) {
+      this.payment.Amount = parseInt(this.amountString + "00");
+    }
+    // Ex: 0,01
+    if (this.amountString.toString().indexOf("0.0") !== -1 && this.amountString.toString().length === 4) {
+      this.payment.Amount = parseInt(this.amountString.toString().charAt(3));
+    }
+    // Exemplo: R$ 0,1
+    if (this.amountString.toString().length === 3 && amountSplited !== undefined && amountSplited.length === 2) {
+      this.payment.Amount = parseInt(amountSplited[0] + amountSplited[1] + "0");
+    }
+    if (this.amountString.toString().indexOf('.') === -1) {
+      this.payment.Amount = parseInt(this.amountString.toString() + "00");
+    }
+    if (this.amountString.toString().length > 3 && amountSplited !== undefined && amountSplited.length === 2) {
+      this.payment.Amount = parseInt(amountSplited[0] + amountSplited[1]);
+    }
+    console.log("Amount: " + this.payment.Amount);
     if (this.paymentMethod === 'CREDIT') {
       $('#btnDoPaymentForSaleCreditCard').prop("disabled",true);
       this.payment.Type = "CreditCard";
@@ -70,7 +135,8 @@ export class ForSaleComponent {
         Payment: copyPayment
       };
       this.billToPayService.paymentCreditCard(creditCardPayment).subscribe(cieloPaymentReturn => {
-        if (cieloPaymentReturn.Payment.ReturnCode === "4") {
+      console.log(cieloPaymentReturn);
+        if (cieloPaymentReturn.Payment.Status === 1 || cieloPaymentReturn.Payment.Status === 2) {
           let toastOptions: ToastOptions = {
             title: "Pagamento Realizado",
             showClose: true,
@@ -81,12 +147,15 @@ export class ForSaleComponent {
         } else {
           this.stopSlimLoadingBar();
           this.showMsgError(parseInt(cieloPaymentReturn.Payment.ReturnCode), cieloPaymentReturn.Payment.ReturnMessage);
+          $('#btnDoPaymentForSaleCreditCard').prop("disabled",false);
         }
         $('#btnDoPaymentForSaleCreditCard').prop("disabled",false);
       }, error => {
         this.handleError(error);
+        $('#btnDoPaymentForSaleCreditCard').prop("disabled",false);
       })
     } else if (this.paymentMethod === 'DEBIT') {
+      $('#btnDoPaymentForSaleDebitCard').prop("disabled",true);
       let debitPayment = {
         MerchantOrderId: "2014121201",
         Customer: {
@@ -95,20 +164,34 @@ export class ForSaleComponent {
         Payment: {
           Type: "DebitCard",
           ReturnUrl: "http://localhost:4200",
-          Amount: 5,
+          Amount: this.payment.Amount,
           DebitCard: this.payment.DebitCard
         }
       };
       this.billToPayService.paymentDebitCard(debitPayment).subscribe(cieloPaymentReturn => {
-        let toastOptions: ToastOptions = {
-          title: "Pagamento Realizado",
-          showClose: true,
-          timeout: 4000
-        };
-        this.toastyService.success(toastOptions);
-        this.saveCieloPayment(cieloPaymentReturn, undefined);
+        console.log(cieloPaymentReturn);
+        if (cieloPaymentReturn.Payment.Status === 1 || cieloPaymentReturn.Payment.Status === 2) {
+          let toastOptions: ToastOptions = {
+            title: "Pagamento Realizado",
+            showClose: true,
+            timeout: 4000
+          };
+          this.toastyService.success(toastOptions);
+          this.saveCieloPayment(cieloPaymentReturn, undefined);
+          $('#btnDoPaymentForSaleDebitCard').prop("disabled",false);
+        } else {
+          let toastOptions: ToastOptions = {
+            title: cieloPaymentReturn.Payment.ReturnMessage,
+            showClose: true,
+            timeout: 4000
+          };
+          this.toastyService.error(toastOptions);
+          $('#btnDoPaymentForSaleDebitCard').prop("disabled",false);
+        }
+
       }, error => {
         this.handleError(error);
+        $('#btnDoPaymentForSaleDebitCard').prop("disabled",false);
       })
     }
   }
@@ -123,7 +206,6 @@ export class ForSaleComponent {
     } else if (error.json() !== undefined) {
       this.showMsgError(error.json().Code, error.json().Message);
     }
-    $('#btnDoPayment').prop("disabled",false);
   }
 
   private stopSlimLoadingBar(): void {

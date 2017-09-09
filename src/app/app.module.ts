@@ -1,6 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import { HttpModule } from '@angular/http';
 
 import { AppComponent } from './app.component';
@@ -28,6 +28,7 @@ import {BilletShippingService} from './financial/bills-to-pay/billet-payment/bil
 import { LOCALE_ID } from '@angular/core';
 import { ForSaleComponent } from './financial/for-sale/for-sale.component';
 import {CurrencyMaskModule} from 'ng2-currency-mask';
+import {CommonModule} from '@angular/common';
 
 @NgModule({
   declarations: [
@@ -45,6 +46,8 @@ import {CurrencyMaskModule} from 'ng2-currency-mask';
   imports: [
     BrowserModule,
     FormsModule,
+    CommonModule,
+    ReactiveFormsModule,
     HttpModule,
     TextMaskModule,
     TabsModule.forRoot(),

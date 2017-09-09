@@ -35,6 +35,7 @@ var billet_shipping_service_1 = require("./financial/bills-to-pay/billet-payment
 var core_2 = require("@angular/core");
 var for_sale_component_1 = require("./financial/for-sale/for-sale.component");
 var ng2_currency_mask_1 = require("ng2-currency-mask");
+var common_1 = require("@angular/common");
 var AppModule = (function () {
     function AppModule() {
     }
@@ -57,6 +58,8 @@ AppModule = __decorate([
         imports: [
             platform_browser_1.BrowserModule,
             forms_1.FormsModule,
+            common_1.CommonModule,
+            forms_1.ReactiveFormsModule,
             http_1.HttpModule,
             angular2_text_mask_1.TextMaskModule,
             ngx_bootstrap_1.TabsModule.forRoot(),

@@ -9,7 +9,7 @@ export class BillToPayService {
   private urlBillToPay = 'http://localhost:8080/bill-to-pay/';
   private urlSandBox = 'https://apisandbox.cieloecommerce.cielo.com.br/1/sales';
   private urlSandBoxCard = 'https://apisandbox.cieloecommerce.cielo.com.br/1/card';
-  private urlCieloProduction = "https://apiquery.cieloecommerce.cielo.com.br/";
+  private urlCieloProduction = "https://api.cieloecommerce.cielo.com.br/1/sales/";
   headers = new Headers({ 'Content-Type': 'application/json' });
   private params = new URLSearchParams();
 
@@ -28,8 +28,11 @@ export class BillToPayService {
   }
 
   public paymentDebitCard(payment: any): Observable<any> {
+    this.params = new URLSearchParams();
     this.setMerchantIdAndKey();
-    return this.http.post(this.urlCieloProduction, payment, {headers: this.headers}).map(res => res.json());
+    console.log(payment);
+    console.log(this.params);
+    return this.http.post(this.urlCieloProduction, payment, {headers: this.headers, search: this.params}).map(res => res.json());
   }
 
   public createCardToken(cardTokenRequest: any): Observable<any> {
@@ -38,7 +41,9 @@ export class BillToPayService {
   }
 
   private setMerchantIdAndKey(): void {
-    this.headers.set('MerchantId', 'fe17c77b-df00-4ad4-a8e7-378dfc41cf96');
-    this.headers.set('MerchantKey', 'TCCBVGXPLLJHJFGQBFPDUWFBNSPLLJTAZAMXJWJK');
+    /*this.headers.set('MerchantId', 'fe17c77b-df00-4ad4-a8e7-378dfc41cf96');
+    this.headers.set('MerchantKey', 'TCCBVGXPLLJHJFGQBFPDUWFBNSPLLJTAZAMXJWJK');*/
+    this.headers.set('MerchantId', '75668c3e-f66f-41b2-83ef-77f0d94e32f1');
+    this.headers.set('MerchantKey', 'KbKRY5d1iNuoTsOgpzKAwuFtfyyET6lIc6QKBvjH');
   }
 }
