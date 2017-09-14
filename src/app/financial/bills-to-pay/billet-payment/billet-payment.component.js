@@ -7,25 +7,28 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
-var moment = require("moment");
 var BilletPaymentComponent = (function () {
-    function BilletPaymentComponent() {
-        // this.billetShipping = new BilletShipping();
+    function BilletPaymentComponent(elementRef, route, billetService, clientService) {
+        var _this = this;
+        this.elementRef = elementRef;
+        this.route = route;
+        this.billetService = billetService;
+        this.clientService = clientService;
+        this.codeBar = "";
+        billetService.getBilletById(this.route.snapshot.params["billetId"]).subscribe(function (result) {
+            _this.billetShipping = result;
+            _this.billetShipping.isCancel = false;
+            _this.billetShipping.partialPayment = "NAO";
+            if (_this.billetShipping !== null && _this.billetShipping !== undefined) {
+                clientService.view(_this.billetShipping.clientId).subscribe(function (client) {
+                    _this.client = client;
+                    // this.generateCodeBarCaixa(this.generateQrCode(this.print()));
+                });
+            }
+        });
     }
-    BilletPaymentComponent.prototype.getCurrentDate = function () {
-        return moment().format('DD/MM/YYYY');
-    };
-    BilletPaymentComponent.prototype.getMaturityDate = function (date) {
-        return moment(date).format('DD/MM/YYYY');
-    };
     return BilletPaymentComponent;
 }());
-__decorate([
-    core_1.Input()
-], BilletPaymentComponent.prototype, "totalPayment", void 0);
-__decorate([
-    core_1.Input()
-], BilletPaymentComponent.prototype, "codeBar", void 0);
 __decorate([
     core_1.Input()
 ], BilletPaymentComponent.prototype, "billetShipping", void 0);

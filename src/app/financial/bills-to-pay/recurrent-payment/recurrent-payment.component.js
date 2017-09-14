@@ -43,47 +43,73 @@ var RecurrentPaymentComponent = (function () {
         var _this = this;
         $('#btnDoPayment').prop("disabled", true);
         this.payment.Type = "CreditCard";
-        this.payment.Amount = this.totalPayment;
+        this.payment.Amount = this.getConvertAmount();
         this.payment.SoftDescriptor = "TESTE";
-        this.slimLoadingBarService.start();
-        var copyPayment = Object.assign({}, this.payment);
-        copyPayment.DebitCard = undefined;
-        copyPayment.RecurrentPayment = undefined;
-        var creditCardPayment = {
-            MerchantOrderId: "2014113245231706",
-            Customer: {
-                Name: this.client.name
-            },
-            Payment: copyPayment
-        };
-        this.billToPayService.paymentCreditCard(creditCardPayment).subscribe(function (cieloPaymentReturn) {
-            if (cieloPaymentReturn.Payment.ReturnCode === "4") {
-                _this.saveListBillToPayPayment();
-                _this.saveListBillToPayAmountsPaid();
-                if (_this.checkFuturePayments) {
-                    _this.saveCardToken(cieloPaymentReturn);
+        this.cieloPaymentService.getOrderId().subscribe(function (count) {
+            var countOrderId = count + 1;
+            _this.slimLoadingBarService.start();
+            var copyPayment = Object.assign({}, _this.payment);
+            copyPayment.DebitCard = undefined;
+            copyPayment.RecurrentPayment = undefined;
+            var creditCardPayment = {
+                MerchantOrderId: countOrderId,
+                Customer: {
+                    Name: _this.client.name
+                },
+                Payment: copyPayment
+            };
+            _this.billToPayService.paymentCreditCard(creditCardPayment).subscribe(function (cieloPaymentReturn) {
+                if (cieloPaymentReturn.Payment.ReturnCode === "4") {
+                    _this.saveListBillToPayPayment();
+                    _this.saveListBillToPayAmountsPaid();
+                    if (_this.checkFuturePayments) {
+                        _this.saveCardToken(cieloPaymentReturn);
+                    }
+                    else {
+                        _this.saveCieloPayment(cieloPaymentReturn, undefined, countOrderId);
+                    }
                 }
                 else {
-                    _this.saveCieloPayment(cieloPaymentReturn, undefined);
+                    _this.stopSlimLoadingBar();
+                    _this.showMsgError(parseInt(cieloPaymentReturn.Payment.ReturnCode), cieloPaymentReturn.Payment.ReturnMessage);
                 }
-            }
-            else {
+                $('#btnDoPayment').prop("disabled", false);
+            }, function (error) {
                 _this.stopSlimLoadingBar();
-                _this.showMsgError(parseInt(cieloPaymentReturn.Payment.ReturnCode), cieloPaymentReturn.Payment.ReturnMessage);
-            }
-            $('#btnDoPayment').prop("disabled", false);
-        }, function (error) {
-            _this.stopSlimLoadingBar();
-            if (error.json().length > 0) {
-                error.json().forEach(function (error) {
-                    _this.showMsgError(error.Code, error.Message);
-                });
-            }
-            else if (error.json() !== undefined) {
-                _this.showMsgError(error.json().Code, error.json().Message);
-            }
-            $('#btnDoPayment').prop("disabled", false);
+                if (error.json().length > 0) {
+                    error.json().forEach(function (error) {
+                        _this.showMsgError(error.Code, error.Message);
+                    });
+                }
+                else if (error.json() !== undefined) {
+                    _this.showMsgError(error.json().Code, error.json().Message);
+                }
+                $('#btnDoPayment').prop("disabled", false);
+            });
         });
+    };
+    RecurrentPaymentComponent.prototype.getConvertAmount = function () {
+        var amountSplited = this.totalPayment.toString().split(".");
+        var amountToReturn = 0;
+        // Exemplo: R$ 1
+        if (this.totalPayment.toString().length == 1) {
+            amountToReturn = parseInt(this.totalPayment + "00");
+        }
+        // Ex: 0,01
+        if (this.totalPayment.toString().indexOf("0.0") !== -1 && this.totalPayment.toString().length === 4) {
+            amountToReturn = parseInt(this.totalPayment.toString().charAt(3));
+        }
+        // Exemplo: R$ 0,1
+        if (this.totalPayment.toString().length === 3 && amountSplited !== undefined && amountSplited.length === 2) {
+            amountToReturn = parseInt(amountSplited[0] + amountSplited[1] + "0");
+        }
+        if (this.totalPayment.toString().indexOf('.') === -1) {
+            amountToReturn = parseInt(this.totalPayment.toString() + "00");
+        }
+        if (this.totalPayment.toString().length > 3 && amountSplited !== undefined && amountSplited.length === 2) {
+            amountToReturn = parseInt(amountSplited[0] + amountSplited[1]);
+        }
+        return amountToReturn;
     };
     RecurrentPaymentComponent.prototype.saveCardToken = function (cieloPaymentReturn) {
         var _this = this;
@@ -95,7 +121,7 @@ var RecurrentPaymentComponent = (function () {
             Brand: this.payment.CreditCard.Brand
         };
         this.billToPayService.createCardToken(cardTokenRequest).subscribe(function (result) {
-            _this.saveCieloPayment(cieloPaymentReturn, result.CardToken);
+            _this.saveCieloPayment(cieloPaymentReturn, result.CardToken, undefined);
         }, function (error) {
             _this.stopSlimLoadingBar();
             if (error.json().length > 0) {
@@ -149,10 +175,11 @@ var RecurrentPaymentComponent = (function () {
             _this.showMsgError(error.join().status, error.json().message);
         });
     };
-    RecurrentPaymentComponent.prototype.saveCieloPayment = function (cieloPaymentReturn, cardToken) {
+    RecurrentPaymentComponent.prototype.saveCieloPayment = function (cieloPaymentReturn, cardToken, countOrderId) {
         var _this = this;
         this.cieloPayment = constants_1.Constants.getCiloPaymentConverted(cieloPaymentReturn, cardToken, false);
         this.cieloPayment.clientId = this.route.snapshot.params['clientId'];
+        this.cieloPayment.countOrderId = countOrderId;
         this.cieloPaymentService.create(this.cieloPayment, false).subscribe(function (result) {
             _this.stopSlimLoadingBar();
             _this.modalReceipt.show();
@@ -211,7 +238,7 @@ var RecurrentPaymentComponent = (function () {
         printContents = document.getElementById('div-payment-receipt').innerHTML;
         popupWin = window.open('', '_blank', 'top=0,left=0,height=100%,width=auto');
         popupWin.document.open();
-        popupWin.document.write("\n      <html>\n        <head>\n          <title>Comprovante</title>\n          <style>\n            #div-payment-receipt {\n              float: none;\n              margin: 0 auto;\n              background-color: #EBFAFF\n            }\n            p {\n              font-size: 11px;\n              margin: 0;\n            }\n          </style>\n        </head>\n    <body onload=\"window.print();window.close()\">" + printContents + "</body>\n      </html>");
+        popupWin.document.write("\n      <html>\n        <head>\n          <title>Comprovante</title>\n          <style>\n            #div-payment-receipt {\n              float: none;\n              margin: 0 auto;\n              background-color: #EBFAFF\n            }\n            p {\n              font-size: 11px;\n              margin: 0;\n              max-width: 220px;\n            }\n          </style>\n        </head>\n    <body onload=\"window.print();window.close()\">" + printContents + "</body>\n      </html>");
         popupWin.document.close();
     };
     return RecurrentPaymentComponent;

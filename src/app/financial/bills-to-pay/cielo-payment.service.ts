@@ -17,4 +17,8 @@ export class CieloPaymentService {
     return this.http.post(this.urlCieloPayment, cieloPayment, {headers: this.headers, search: this.params}).map(res => res.json());
   }
 
+  public getOrderId(): Observable<number> {
+    return this.http.get(this.urlCieloPayment + "count-order-id/", {headers: this.headers}).map(res => res.json());
+  }
+
 }

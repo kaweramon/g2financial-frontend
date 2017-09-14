@@ -26,4 +26,5 @@ export class CieloPayment {
   public clientId: number;
   public isForSale: boolean;
   public description: string;
+  public countOrderId: number;
 }

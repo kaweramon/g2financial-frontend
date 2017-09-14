@@ -21,7 +21,7 @@ export class PaidBillsComponent implements OnInit {
   ngOnInit() {
     this.service.listByClientId(this.route.snapshot.params['clientId'], "SIM").subscribe(result => {
       this.listPaidBills = result;
-      this.getListBillToPayPayment();
+      // this.getListBillToPayPayment();
     });
   }
 

@@ -44,6 +44,8 @@ export class RecurrentPaymentComponent {
 
   public checkFuturePayments: boolean;
 
+  public amountString: string;
+
   constructor(private billToPayService: BillToPayService, private route: ActivatedRoute, private clientService: ClientService,
               private billToPayAmountPaidService: BillToPayAmountsPaidService, private toastyService: ToastyService,
               private toastyConfig: ToastyConfig, private slimLoadingBarService: SlimLoadingBarService,
@@ -66,44 +68,71 @@ export class RecurrentPaymentComponent {
   public doPayment(): void {
     $('#btnDoPayment').prop("disabled",true);
     this.payment.Type = "CreditCard";
-    this.payment.Amount = this.totalPayment;
+    this.payment.Amount = this.getConvertAmount();
     this.payment.SoftDescriptor =  "TESTE";
-    this.slimLoadingBarService.start();
-    let copyPayment = Object.assign({}, this.payment);
-    copyPayment.DebitCard = undefined;
-    copyPayment.RecurrentPayment = undefined;
-    let creditCardPayment = {
-      MerchantOrderId: "2014113245231706",
-      Customer: {
-        Name: this.client.name
-      },
-      Payment: copyPayment
-    };
-    this.billToPayService.paymentCreditCard(creditCardPayment).subscribe(cieloPaymentReturn => {
-      if (cieloPaymentReturn.Payment.ReturnCode === "4") {
-        this.saveListBillToPayPayment();
-        this.saveListBillToPayAmountsPaid();
-        if (this.checkFuturePayments) {
-          this.saveCardToken(cieloPaymentReturn);
+    this.cieloPaymentService.getOrderId().subscribe(count => {
+      let countOrderId = count + 1;
+      this.slimLoadingBarService.start();
+      let copyPayment = Object.assign({}, this.payment);
+      copyPayment.DebitCard = undefined;
+      copyPayment.RecurrentPayment = undefined;
+      let creditCardPayment = {
+        MerchantOrderId: countOrderId,
+        Customer: {
+          Name: this.client.name
+        },
+        Payment: copyPayment
+      };
+      this.billToPayService.paymentCreditCard(creditCardPayment).subscribe(cieloPaymentReturn => {
+        if (cieloPaymentReturn.Payment.ReturnCode === "4") {
+          this.saveListBillToPayPayment();
+          this.saveListBillToPayAmountsPaid();
+          if (this.checkFuturePayments) {
+            this.saveCardToken(cieloPaymentReturn);
+          } else {
+            this.saveCieloPayment(cieloPaymentReturn, undefined, countOrderId);
+          }
         } else {
-          this.saveCieloPayment(cieloPaymentReturn, undefined);
+          this.stopSlimLoadingBar();
+          this.showMsgError(parseInt(cieloPaymentReturn.Payment.ReturnCode), cieloPaymentReturn.Payment.ReturnMessage);
         }
-      } else {
+        $('#btnDoPayment').prop("disabled",false);
+      }, error => {
         this.stopSlimLoadingBar();
-        this.showMsgError(parseInt(cieloPaymentReturn.Payment.ReturnCode), cieloPaymentReturn.Payment.ReturnMessage);
-      }
-      $('#btnDoPayment').prop("disabled",false);
-    }, error => {
-      this.stopSlimLoadingBar();
-      if (error.json().length > 0) {
-        error.json().forEach(error => {
-          this.showMsgError(error.Code, error.Message);
-        });
-      } else if (error.json() !== undefined) {
-        this.showMsgError(error.json().Code, error.json().Message);
-      }
-      $('#btnDoPayment').prop("disabled",false);
+        if (error.json().length > 0) {
+          error.json().forEach(error => {
+            this.showMsgError(error.Code, error.Message);
+          });
+        } else if (error.json() !== undefined) {
+          this.showMsgError(error.json().Code, error.json().Message);
+        }
+        $('#btnDoPayment').prop("disabled",false);
+      });
     });
+  }
+
+  private getConvertAmount(): number {
+    let amountSplited = this.totalPayment.toString().split(".");
+    let amountToReturn: number = 0;
+    // Exemplo: R$ 1
+    if (this.totalPayment.toString().length == 1) {
+      amountToReturn = parseInt(this.totalPayment + "00");
+    }
+    // Ex: 0,01
+    if (this.totalPayment.toString().indexOf("0.0") !== -1 && this.totalPayment.toString().length === 4) {
+      amountToReturn = parseInt(this.totalPayment.toString().charAt(3));
+    }
+    // Exemplo: R$ 0,1
+    if (this.totalPayment.toString().length === 3 && amountSplited !== undefined && amountSplited.length === 2) {
+      amountToReturn = parseInt(amountSplited[0] + amountSplited[1] + "0");
+    }
+    if (this.totalPayment.toString().indexOf('.') === -1) {
+      amountToReturn = parseInt(this.totalPayment.toString() + "00");
+    }
+    if (this.totalPayment.toString().length > 3 && amountSplited !== undefined && amountSplited.length === 2) {
+      amountToReturn = parseInt(amountSplited[0] + amountSplited[1]);
+    }
+    return amountToReturn;
   }
 
   private saveCardToken(cieloPaymentReturn:any): void {
@@ -115,7 +144,7 @@ export class RecurrentPaymentComponent {
       Brand: this.payment.CreditCard.Brand
     };
     this.billToPayService.createCardToken(cardTokenRequest).subscribe(result => {
-      this.saveCieloPayment(cieloPaymentReturn, result.CardToken);
+      this.saveCieloPayment(cieloPaymentReturn, result.CardToken, undefined);
     }, error => {
       this.stopSlimLoadingBar();
       if (error.json().length > 0) {
@@ -171,9 +200,10 @@ export class RecurrentPaymentComponent {
     })
   }
 
-  private saveCieloPayment(cieloPaymentReturn: any, cardToken: string): void {
+  private saveCieloPayment(cieloPaymentReturn: any, cardToken: string, countOrderId: any): void {
     this.cieloPayment = Constants.getCiloPaymentConverted(cieloPaymentReturn, cardToken, false);
     this.cieloPayment.clientId = this.route.snapshot.params['clientId'];
+    this.cieloPayment.countOrderId = countOrderId;
     this.cieloPaymentService.create(this.cieloPayment, false).subscribe(result => {
       this.stopSlimLoadingBar();
       this.modalReceipt.show();
@@ -252,6 +282,7 @@ export class RecurrentPaymentComponent {
             p {
               font-size: 11px;
               margin: 0;
+              max-width: 220px;
             }
           </style>
         </head>

@@ -19,7 +19,7 @@ var PaidBillsComponent = (function () {
         var _this = this;
         this.service.listByClientId(this.route.snapshot.params['clientId'], "SIM").subscribe(function (result) {
             _this.listPaidBills = result;
-            _this.getListBillToPayPayment();
+            // this.getListBillToPayPayment();
         });
     };
     PaidBillsComponent.prototype.getListBillToPayPayment = function () {

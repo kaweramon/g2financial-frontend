@@ -34,27 +34,19 @@ var BillsToPayComponent = (function () {
         this.clientService.view(this.route.snapshot.params["clientId"]).subscribe(function (client) {
             _this.client = client;
         });
-        this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(function (result) {
-            _this.listBillToPay = result;
-            _this.getListBillToPayPayment();
-        });
         this.typeInterestService.getByType('MENSALIDADE').subscribe(function (result) {
             _this.typeInterestCharge = result;
         });
-    }
-    BillsToPayComponent.prototype.getListBillToPayPayment = function () {
-        var _this = this;
-        this.listBillToPay.forEach(function (billToPay) {
-            if (billToPay.listBillToPayPayment !== null && billToPay.listBillToPayPayment.length > 0) {
-                billToPay.listBillToPayPayment.forEach(function (billToPayPayment) {
-                    billToPayPayment.description = billToPay.description;
+        this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(function (result) {
+            _this.listBillToPayPayment = result;
+            if (_this.listBillToPayPayment !== undefined && _this.listBillToPayPayment.length > 0) {
+                _this.listBillToPayPayment.forEach(function (billToPayPayment) {
                     _this.isDateLessOrEqualThanToday(billToPayPayment);
                     _this.calculateInterests(billToPayPayment);
-                    _this.listBillToPayPayment.push(billToPayPayment);
                 });
             }
         });
-    };
+    }
     BillsToPayComponent.prototype.payBills = function () {
         this.isPaymentSelected = true;
         this.listSelectedBillToPayPayment = [];
@@ -110,9 +102,9 @@ var BillsToPayComponent = (function () {
         }
     };
     BillsToPayComponent.prototype.generateBillet = function (billetShipping) {
-        var _this = this;
-        $('#btnGenerateBillet').prop('disabled', true);
-        this.billetShipping = billetShipping;
+        document.getElementById('ifrOutput').style.display = 'block';
+        $('#btnPrintBillet_' + billetShipping.id).prop('disabled', true);
+        this.billetShipping = Object.assign({}, billetShipping);
         this.billetShipping.clientId = this.route.snapshot.params["clientId"];
         this.billetShipping.isCancel = false;
         var paymentTypes = "";
@@ -127,15 +119,16 @@ var BillsToPayComponent = (function () {
         this.billetShipping.chargingType = paymentTypes;
         this.billetShipping.partialPayment = "NAO";
         this.billetShipping.documentNumber = this.ourNumber.substring(this.ourNumber.length - 7, this.ourNumber.length - 2);
-        this.billetGenerated = true;
-        this.generateCodeBarCaixa();
-        setTimeout(function () {
-            _this.billetGenerated = true;
-            _this.generateQrBarCode();
-            // this.printBillet();
-        }, 500);
+        this.codeBar = "";
+        // this.printBillet();
+        this.generateCodeBarCaixa(this.generateQrCode(this.print()));
+        /*setTimeout(() => {
+          this.billetGenerated = true;
+          this.generateQrBarCode();
+          // this.printBillet();
+        }, 500);*/
     };
-    BillsToPayComponent.prototype.generateCodeBarCaixa = function () {
+    BillsToPayComponent.prototype.generateCodeBarCaixa = function (callback) {
         // Posição 1-3 -> Identificação do banco (104)
         // Posição 4 -> Código da moeda (9 - Real)
         // TODO: Posição 5 -> DV Geral do Código de Barras
@@ -175,10 +168,13 @@ var BillsToPayComponent = (function () {
         this.billetShipping.ourNumber = "14" + this.billetShipping.ourNumber + "-" +
             this.getVerifyDigitOurNumber("14" + this.billetShipping.ourNumber);
         this.codeBar = codeBarToReturn;
+        if (callback) {
+            callback();
+        }
     };
     // CÁLCULO DO DÍGITO VERIFICADOR DA LINHA DIGITÁVEL (CAMPOS 1, 2 E 3)
     BillsToPayComponent.prototype.getVerifyDigitFields123 = function (strToCalc) {
-        var toReturn;
+        var toReturn = 0;
         var total = 0;
         strToCalc = strToCalc.split("").reverse().join("");
         for (var i = 0; i < strToCalc.length; i++) {
@@ -200,7 +196,14 @@ var BillsToPayComponent = (function () {
             toReturn = 10 - total;
         }
         var restAux = (total / 10).toString().split(".");
-        var rest = parseInt(restAux[1].split("")[restAux[1].split("").length - 1]);
+        var rest;
+        if (restAux[1] !== undefined) {
+            // rest = parseInt(restAux[1].split("")[restAux[1].split("").length-1]);
+            rest = (parseInt(restAux[1].split("")[0]) + 1);
+        }
+        else {
+            rest = 0;
+        }
         if (rest == 0) {
             toReturn = 0;
         }
@@ -248,6 +251,7 @@ var BillsToPayComponent = (function () {
         }
         else {
             rest = (parseInt(restAux[1].split("")[0]) + 1);
+            // rest = parseInt(restAux[1].split("")[restAux[1].split("").length-1]);
         }
         if (rest !== undefined) {
             if ((11 - rest) > 9) {
@@ -308,7 +312,9 @@ var BillsToPayComponent = (function () {
             var rest = void 0;
             if (divisionResult[1] !== undefined) {
                 if (divisionResult[1].split("").length > 1) {
-                    rest = parseInt(divisionResult[1].split("")[0]) + 1;
+                    // parseInt(restAux[1].split("")[restAux[1].split("").length-1]);
+                    // rest = parseInt(divisionResult[1].split("")[0]) + 1;
+                    rest = parseInt(divisionResult[1].split("")[divisionResult[1].split("").length - 1]);
                 }
                 else {
                     rest = (parseInt(divisionResult[1].split("")[0]));
@@ -318,6 +324,9 @@ var BillsToPayComponent = (function () {
                 rest = 0;
             }
             result = 11 - rest;
+        }
+        if (result > 9) {
+            result = 0;
         }
         return result;
     };
@@ -363,6 +372,28 @@ var BillsToPayComponent = (function () {
             toReturn = 11 - rest;
         }
         return toReturn;
+    };
+    BillsToPayComponent.prototype.generateQrCode = function (callback) {
+        var s = document.createElement("script");
+        s.type = "text/javascript";
+        s.src = "src/app/financial/bills-to-pay/billet-payment/billet-barcode.js";
+        this.elementRef.nativeElement.appendChild(s);
+        if (callback) {
+            callback();
+        }
+    };
+    BillsToPayComponent.prototype.getCurrentDate = function () {
+        return moment().format('DD/MM/YYYY');
+    };
+    BillsToPayComponent.prototype.getMaturityDate = function (date) {
+        return moment(date).add(1, 'd').format('DD/MM/YYYY');
+    };
+    BillsToPayComponent.prototype.print = function () {
+        $('#btnPrintBillet_' + this.billetShipping.id).prop('disabled', false);
+        var s2 = document.createElement("script");
+        s2.type = "text/javascript";
+        s2.src = "src/app/financial/bills-to-pay/print-billet.js";
+        this.elementRef.nativeElement.appendChild(s2);
     };
     BillsToPayComponent.prototype.generateCodeBar = function () {
         // Primeiro Grupo
@@ -467,31 +498,8 @@ var BillsToPayComponent = (function () {
         // Quinto Grupo -> Fator de Vencimento e Valor Nominal
         var codeBarFifthGroup = factorMaturity + nominalValue;
         this.codeBar = codeBarFirstGroup + " " + codeBarSecondGroup + " " + codeBarThirdGroup + " " + numberVerifyDigit + " " + codeBarFifthGroup;
-        console.log("Código de Barras: " + this.codeBar);
-        console.log(this.getMaturityFactor('2006-08-23'));
-        console.log(this.getBilletCodeBarValue(this.totalPayment));
-        console.log("dig cod. beneficiário: " + this.getVerifyDigitBeneficiaryCode("005507"));
         //Código do beneficiário: 45000
         //DV do Código do Beneficiário = 0
-    };
-    BillsToPayComponent.prototype.generateQrBarCode = function () {
-        var _this = this;
-        var s = document.createElement("script");
-        s.type = "text/javascript";
-        s.src = "src/app/financial/bills-to-pay/billet-payment/billet-barcode.js";
-        this.elementRef.nativeElement.appendChild(s);
-        setTimeout(function () {
-            _this.printBillet();
-        }, 2000);
-    };
-    BillsToPayComponent.prototype.printBillet = function () {
-        // tablebillet
-        var printContents, popupWin;
-        printContents = document.getElementById('tablebillet').innerHTML;
-        popupWin = window.open('', '_blank', 'top=0,left=0,height=100%,width=auto');
-        popupWin.document.open();
-        popupWin.document.write("\n      <html>\n        <head>\n          <style>\n          .logo{\n  text-align: center; height: 10mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000\n}\n.img-logo {\n  content: url('../../../assets/images/logo_caixa.png');\n}\n.bankCode {\n  font-size: 5mm; font-family: arial, verdana; font-weight : bold;\n  font-style: italic; text-align: center; vertical-align: bottom;\n  padding-right: 1mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000\n}\n.bankCode2 {\n  font-size: 5mm; font-family: arial, verdana; font-weight : bold;\n  font-style: italic; text-align: center; vertical-align: bottom;\n  /*border-bottom: 1.2mm solid #000000; border-right: 1.2mm solid #000000;*/\n}\n.billetNumber {\n  font-size: 3.2mm; font-family: arial, verdana; font-weight : bold;\n  text-align: center; vertical-align: bottom; padding-bottom : 1mm;\n  border-bottom: 1mm solid #000000;\n}\n.billetRightHeader {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;\n  border-bottom: 1mm solid #000000; font-weight : bold;\n}\n.billetRightHeader2 {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;\n}\n.billetRightField {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;\n  border-left: 0.15mm solid #000000;\n}\n.billetRightFieldBorderNone {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;\n}\n.billetLeftField2 {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; border-left: 0.15mm solid #000000;\n}\n.billetLeftField {\n  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;\n}\n.billetLeftValue {\n  font-size: 0.29cm; font-family: arial, verdana; padding-left : 1mm;\n  border-left: 0.15mm solid #000000; border-bottom: 0.15mm solid #000000;\n  font-weight: bold;\n}\n.billetLeftValueBorderNone {\n  font-size: 0.29cm; font-family: arial, verdana; padding-left : 1mm;\n  font-weight: bold;\n}\n.billetLeftValue2 {\n  font-size: 3mm; font-family: arial, verdana; padding-left : 1mm;\n  text-align: center; font-weight: bold; border-left: 0.15mm solid #000000;\n  border-bottom: 0.15mm solid #000000;\n}\n.billetLeftValue3 {\n  font-size: 0.29cm; font-family: arial, verdana; padding-left : 1mm;\n  text-align: left; font-weight: bold; border-left: 0.15mm solid #000000;\n}\n.billetRightTextValue {\n  font-size: 0.29cm; font-family: arial, verdana; text-align:right;\n  padding-right: 1mm; font-weight: bold; border-left: 0.15mm solid #000000; border-bottom: 0.15mm solid #000000;\n}\n.billetLeftTextValue2 {\n  font-size: 0.29cm; font-family: arial, verdana;\n  padding-left: 1mm; font-weight: bold; border-left: 0.15mm solid #000000;\n}\n.tr-border-bottom {\n  border-bottom: 0.15mm solid #000000;\n}\n</style>\n          <title>Comprovante</title>\n        </head>\n    <body onload=\"window.print();window.close()\">" + printContents + "</body>\n      </html>");
-        popupWin.document.close();
     };
     return BillsToPayComponent;
 }());

@@ -21,27 +21,30 @@ var BillToPayService = (function () {
     BillToPayService.prototype.listByClientId = function (clientId, isBillToPay) {
         this.params.set('clientId', clientId.toString());
         this.params.set('isBillToPay', isBillToPay);
-        return this.http.get(this.urlBillToPay + clientId, { headers: this.headers, search: this.params }).map(function (res) { return res.json(); });
+        return this.http.get(this.urlBillToPay + clientId, { headers: this.headers, search: this.params })
+            .map(function (res) { return res.json(); });
     };
     BillToPayService.prototype.paymentCreditCard = function (payment) {
         this.params = new http_1.URLSearchParams();
         this.setMerchantIdAndKey();
-        return this.http.post(this.urlCieloProduction, payment, { headers: this.headers, search: this.params }).map(function (res) { return res.json(); });
+        return this.http.post(this.urlCieloProduction, payment, { headers: this.headers, search: this.params })
+            .map(function (res) { return res.json(); });
     };
     BillToPayService.prototype.paymentDebitCard = function (payment) {
         this.params = new http_1.URLSearchParams();
         this.setMerchantIdAndKey();
-        console.log(payment);
-        console.log(this.params);
-        return this.http.post(this.urlCieloProduction, payment, { headers: this.headers, search: this.params }).map(function (res) { return res.json(); });
+        return this.http.post(this.urlCieloProduction, payment, { headers: this.headers, search: this.params })
+            .map(function (res) { return res.json(); });
     };
     BillToPayService.prototype.createCardToken = function (cardTokenRequest) {
         this.setMerchantIdAndKey();
         return this.http.post(this.urlSandBoxCard, cardTokenRequest, { headers: this.headers }).map(function (res) { return res.json(); });
     };
     BillToPayService.prototype.setMerchantIdAndKey = function () {
+        //teste
         /*this.headers.set('MerchantId', 'fe17c77b-df00-4ad4-a8e7-378dfc41cf96');
         this.headers.set('MerchantKey', 'TCCBVGXPLLJHJFGQBFPDUWFBNSPLLJTAZAMXJWJK');*/
+        //produção
         this.headers.set('MerchantId', '75668c3e-f66f-41b2-83ef-77f0d94e32f1');
         this.headers.set('MerchantKey', 'KbKRY5d1iNuoTsOgpzKAwuFtfyyET6lIc6QKBvjH');
     };

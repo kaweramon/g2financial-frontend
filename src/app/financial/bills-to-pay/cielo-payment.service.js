@@ -19,6 +19,9 @@ var CieloPaymentService = (function () {
         this.params.set('isForSale', isForSale);
         return this.http.post(this.urlCieloPayment, cieloPayment, { headers: this.headers, search: this.params }).map(function (res) { return res.json(); });
     };
+    CieloPaymentService.prototype.getOrderId = function () {
+        return this.http.get(this.urlCieloPayment + "count-order-id/", { headers: this.headers }).map(function (res) { return res.json(); });
+    };
     return CieloPaymentService;
 }());
 CieloPaymentService = __decorate([

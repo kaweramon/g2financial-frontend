@@ -13,12 +13,18 @@ var BilletShippingService = (function () {
         this.http = http;
         this.urlBilletShipping = 'http://localhost:8080/billet-shipping/';
         this.headers = new http_1.Headers({ 'Content-Type': 'application/json' });
+        this.params = new http_1.URLSearchParams();
     }
     BilletShippingService.prototype.create = function (billetShipping) {
         return this.http.post(this.urlBilletShipping, billetShipping, { headers: this.headers }).map(function (res) { return res.json(); });
     };
     BilletShippingService.prototype.getLastCounter = function () {
         return this.http.get(this.urlBilletShipping + "last", { headers: this.headers }).map(function (res) { return res.json(); });
+    };
+    BilletShippingService.prototype.getBilletById = function (billetId) {
+        this.params.set('billetId', billetId);
+        return this.http.get(this.urlBilletShipping + billetId, { headers: this.headers, search: this.params })
+            .map(function (res) { return res.json(); });
     };
     return BilletShippingService;
 }());

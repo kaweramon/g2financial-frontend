@@ -40,7 +40,7 @@
       <select name="paymentMethod" id="paymentMethod" class="form-control" [(ngModel)]="paymentMethod"
               formControlName="paymentMethod">
         <option value="CREDIT">Cartão de Crédito</option>
-        <option value="DEBIT">Cartão de Débito</option>
+        <!--<option value="DEBIT">Cartão de Débito</option>-->
       </select>
     </div>
   </div>
@@ -70,7 +70,8 @@
           </span>
         </div>
         <div class="col-lg-4 col-md-4 form-group" [ngClass]="{'has-error' :
-          formForSaleCreditCard.controls.creditCardNumber.errors && (formForSaleCreditCard.controls.creditCardNumber.dirty ||
+          formForSaleCreditCard.controls.creditCardNumber.errors &&
+          (formForSaleCreditCard.controls.creditCardNumber.dirty ||
           formForSaleCreditCard.controls.creditCardNumber.touched)}">
           <label for="inputCreditCardNumber" class="control-label">Número</label>
           <input type="text" name="creditCardNumber" id="inputCreditCardNumber" class="form-control"
@@ -81,6 +82,12 @@
               && (formForSaleCreditCard.controls.creditCardNumber.dirty ||
               formForSaleCreditCard.controls.creditCardNumber.touched)">
             Número é obrigatório
+          </span>
+          <span class="control-label" *ngIf="formForSaleCreditCard.controls.creditCardNumber.errors
+              && formForSaleCreditCard.controls.creditCardNumber.errors.minlength
+              && (formForSaleCreditCard.controls.creditCardNumber.dirty ||
+              formForSaleCreditCard.controls.creditCardNumber.touched)">
+            Número do cartão deve ter no mínimo 16 caracteres
           </span>
         </div>
         <div class="col-lg-2 col-md-2 form-group" [ngClass]="{'has-error' :
@@ -165,7 +172,9 @@
   <div class="row" *ngIf="paymentMethod === 'DEBIT'" style="margin: 0;">
     <form name="formForSaleDebitCard" [formGroup]="formForSaleDebitCard">
       <div class="row">
-        <div class="col-lg-4 col-md-4 form-group">
+        <div class="col-lg-4 col-md-4 form-group" [ngClass]="{'has-error' :
+          formForSaleDebitCard.controls.debitCardBrand.errors && (formForSaleDebitCard.controls.debitCardBrand.dirty ||
+          formForSaleDebitCard.controls.debitCardBrand.touched)}">
           <label for="inputDebitCardBrand" class="control-label">Bandeira</label>
           <select name="debitCardBrand" id="inputDebitCardBrand" class="form-control"
                   [(ngModel)]="payment.DebitCard.Brand" formControlName="debitCardBrand">
@@ -175,32 +184,79 @@
             <option value="Diners">Diners Club</option>
             <option value="">Hipercard</option>
           </select>
+          <span class="control-label" *ngIf="formForSaleDebitCard.controls.debitCardBrand.errors
+              && formForSaleDebitCard.controls.debitCardBrand.errors.required
+              && (formForSaleDebitCard.controls.debitCardBrand.dirty ||
+              formForSaleDebitCard.controls.debitCardBrand.touched)">
+            Bandeira é obrigatória
+          </span>
         </div>
-        <div class="col-lg-4 col-md-4 form-group">
+        <div class="col-lg-4 col-md-4 form-group"
+             [ngClass]="{'has-error' :
+          formForSaleDebitCard.controls.debitCardNumber.errors && (formForSaleDebitCard.controls.debitCardNumber.dirty ||
+          formForSaleDebitCard.controls.debitCardNumber.touched)}">
           <label for="inputDebitCardNumber" class="control-label">Número</label>
           <input type="text" name="debitCardNumber" id="inputDebitCardNumber" class="form-control"
                  formControlName="debitCardNumber"
                  [(ngModel)]="payment.DebitCard.CardNumber">
+          <span class="control-label" *ngIf="formForSaleDebitCard.controls.debitCardNumber.errors
+              && formForSaleDebitCard.controls.debitCardNumber.errors.required
+              && (formForSaleDebitCard.controls.debitCardNumber.dirty ||
+              formForSaleDebitCard.controls.debitCardNumber.touched)">
+            Número é obrigatório
+          </span>
+          <span class="control-label" *ngIf="formForSaleDebitCard.controls.debitCardNumber.errors
+              && formForSaleDebitCard.controls.debitCardNumber.errors.minlength
+              && (formForSaleDebitCard.controls.debitCardNumber.dirty ||
+              formForSaleDebitCard.controls.debitCardNumber.touched)">
+            Número do cartão deve ter no mínimo 16 caracteres
+          </span>
         </div>
-        <div class="col-lg-2 col-md-2 form-group">
+        <div class="col-lg-2 col-md-2 form-group" [ngClass]="{'has-error' :
+          formForSaleDebitCard.controls.debitCardExpirationDate.errors && (formForSaleDebitCard.controls.debitCardExpirationDate.dirty ||
+          formForSaleDebitCard.controls.debitCardExpirationDate.touched)}">
           <label for="inputDebitCardValidDate" class="control-label">Validade</label>
           <input type="text" id="inputDebitCardValidDate" name="debitCardExpirationDate" class="form-control"
                  formControlName="debitCardExpirationDate"
                  [textMask]="{mask: maskValidDate}" [(ngModel)]="payment.DebitCard.ExpirationDate">
+          <span class="control-label" *ngIf="formForSaleDebitCard.controls.debitCardExpirationDate.errors
+              && formForSaleDebitCard.controls.debitCardExpirationDate.errors.required
+              && (formForSaleDebitCard.controls.debitCardExpirationDate.dirty ||
+              formForSaleDebitCard.controls.debitCardExpirationDate.touched)">
+            Data é obrigatória
+          </span>
         </div>
-        <div class="col-lg-2 col-md-2 form-group">
+        <div class="col-lg-2 col-md-2 form-group" [ngClass]="{'has-error' :
+          formForSaleDebitCard.controls.debitCardSecurityCode.errors &&
+          (formForSaleDebitCard.controls.debitCardSecurityCode.dirty ||
+          formForSaleDebitCard.controls.debitCardSecurityCode.touched)}">
           <label for="inputDebitCardSecurityCode" class="control-label">Cód. Segurança</label>
           <input type="text" id="inputDebitCardSecurityCode" class="form-control"
                  [textMask]="{mask: maskSecurityCode}" formControlName="debitCardSecurityCode"
                  [(ngModel)]="payment.DebitCard.SecurityCode" name="debitCardSecurityCode">
+          <span class="control-label" *ngIf="formForSaleDebitCard.controls.debitCardSecurityCode.errors
+              && formForSaleDebitCard.controls.debitCardSecurityCode.errors.required
+              && (formForSaleDebitCard.controls.debitCardSecurityCode.dirty ||
+              formForSaleDebitCard.controls.debitCardSecurityCode.touched)">
+            Código é obrigatório
+          </span>
         </div>
       </div>
       <div class="row">
-        <div class="col-lg-4 col-md-4 form-group">
+        <div class="col-lg-4 col-md-4 form-group" [ngClass]="{'has-error' :
+          formForSaleDebitCard.controls.debitCardHolder.errors &&
+          (formForSaleDebitCard.controls.debitCardHolder.dirty ||
+          formForSaleDebitCard.controls.debitCardHolder.touched)}">
           <label for="inputDebitCardHolder" class="control-label">Nome impresso</label>
           <input type="text" id="inputDebitCardHolder" class="form-control"
                  formControlName="debitCardHolder"
                  [(ngModel)]="payment.DebitCard.Holder" name="debitCardHolder">
+          <span class="control-label" *ngIf="formForSaleDebitCard.controls.debitCardHolder.errors
+              && formForSaleDebitCard.controls.debitCardHolder.errors.required
+              && (formForSaleDebitCard.controls.debitCardHolder.dirty ||
+              formForSaleDebitCard.controls.debitCardHolder.touched)">
+            Nome é obrigatório
+          </span>
         </div>
       </div>
     </form>
@@ -258,7 +314,7 @@
             <br>
             <p style="max-width: 220px; text-align: left">Discriminação:&nbsp;{{paymentDescription}}</p>
             <p style="text-align: left;max-width: 220px;"><strong>VALOR:</strong></p>
-            <p style="margin-top: -15px; text-align: right;max-width: 220px;"><strong>{{payment?.Amount | number : '1.2-2'}}</strong></p>
+            <p style="margin-top: -15px; text-align: right;max-width: 220px;"><strong>{{amountString | number : '1.2-2'}}</strong></p>
             <!--Outros valores-->
             <p style="text-align: left;max-width: 220px;">******{{getLast4DigitsFromCard()}}</p>
             <p *ngIf="paymentMethod === 'CREDIT'"

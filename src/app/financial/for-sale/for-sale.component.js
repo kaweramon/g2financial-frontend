@@ -48,7 +48,8 @@ var ForSaleComponent = (function () {
     ForSaleComponent.prototype.initFormBuilderCreditCard = function () {
         this.formForSaleCreditCard = this.formBuilder.group({
             'creditCardBrand': [this.payment.CreditCard.Brand, [forms_1.Validators.required]],
-            'creditCardNumber': [this.payment.CreditCard.CardNumber, [forms_1.Validators.required]],
+            'creditCardNumber': [this.payment.CreditCard.CardNumber, [forms_1.Validators.required,
+                    forms_1.Validators.minLength(16)]],
             'creditCardExpirationDate': [this.payment.CreditCard.ExpirationDate, [forms_1.Validators.required]],
             'creditCardSecurityCode': [this.payment.CreditCard.SecurityCode, [forms_1.Validators.required]],
             'creditCardHolder': [this.payment.CreditCard.Holder, [forms_1.Validators.required]],
@@ -58,7 +59,8 @@ var ForSaleComponent = (function () {
     ForSaleComponent.prototype.initFormBuilderDebitCard = function () {
         this.formForSaleDebitCard = this.formBuilder.group({
             'debitCardBrand': [this.payment.DebitCard.Brand, [forms_1.Validators.required]],
-            'debitCardNumber': [this.payment.DebitCard.CardNumber, [forms_1.Validators.required]],
+            'debitCardNumber': [this.payment.DebitCard.CardNumber, [forms_1.Validators.required,
+                    forms_1.Validators.minLength(16)]],
             'debitCardExpirationDate': [this.payment.DebitCard.ExpirationDate, [forms_1.Validators.required]],
             'debitCardSecurityCode': [this.payment.DebitCard.SecurityCode, [forms_1.Validators.required]],
             'debitCardHolder': [this.payment.DebitCard.Holder, [forms_1.Validators.required]],
@@ -85,94 +87,95 @@ var ForSaleComponent = (function () {
         if (this.amountString.toString().length > 3 && amountSplited !== undefined && amountSplited.length === 2) {
             this.payment.Amount = parseInt(amountSplited[0] + amountSplited[1]);
         }
-        console.log("Amount: " + this.payment.Amount);
-        if (this.paymentMethod === 'CREDIT') {
-            $('#btnDoPaymentForSaleCreditCard').prop("disabled", true);
-            this.payment.Type = "CreditCard";
-            if (this.client.name.length > 13) {
-                this.payment.SoftDescriptor = this.client.name.substring(0, 13);
-            }
-            else {
-                this.payment.SoftDescriptor = this.client.name;
-            }
-            this.slimLoadingBarService.start();
-            var copyPayment = Object.assign({}, this.payment);
-            copyPayment.DebitCard = undefined;
-            copyPayment.RecurrentPayment = undefined;
-            var creditCardPayment = {
-                MerchantOrderId: "2014113245231706",
-                Customer: {
-                    Name: this.client.name
-                },
-                Payment: copyPayment
-            };
-            this.billToPayService.paymentCreditCard(creditCardPayment).subscribe(function (cieloPaymentReturn) {
-                console.log(cieloPaymentReturn);
-                if (cieloPaymentReturn.Payment.Status === 1 || cieloPaymentReturn.Payment.Status === 2) {
-                    var toastOptions = {
-                        title: "Pagamento Realizado",
-                        showClose: true,
-                        timeout: 4000
-                    };
-                    _this.toastyService.success(toastOptions);
-                    _this.saveCieloPayment(cieloPaymentReturn, undefined);
+        this.cieloPaymentService.getOrderId().subscribe(function (countId) {
+            var countOrderId = countId + 1;
+            if (_this.paymentMethod === 'CREDIT') {
+                $('#btnDoPaymentForSaleCreditCard').prop("disabled", true);
+                _this.payment.Type = "CreditCard";
+                if (_this.client.name.length > 13) {
+                    _this.payment.SoftDescriptor = _this.client.name.substring(0, 13);
                 }
                 else {
-                    _this.stopSlimLoadingBar();
-                    _this.showMsgError(parseInt(cieloPaymentReturn.Payment.ReturnCode), cieloPaymentReturn.Payment.ReturnMessage);
+                    _this.payment.SoftDescriptor = _this.client.name;
+                }
+                _this.slimLoadingBarService.start();
+                var copyPayment = Object.assign({}, _this.payment);
+                copyPayment.DebitCard = undefined;
+                copyPayment.RecurrentPayment = undefined;
+                var creditCardPayment = {
+                    MerchantOrderId: countOrderId.toString(),
+                    Customer: {
+                        Name: _this.client.name
+                    },
+                    Payment: copyPayment
+                };
+                _this.billToPayService.paymentCreditCard(creditCardPayment).subscribe(function (cieloPaymentReturn) {
+                    if (cieloPaymentReturn.Payment.Status === 1 || cieloPaymentReturn.Payment.Status === 2) {
+                        var toastOptions = {
+                            title: "Pagamento Realizado",
+                            showClose: true,
+                            timeout: 4000
+                        };
+                        _this.toastyService.success(toastOptions);
+                        _this.saveCieloPayment(cieloPaymentReturn, undefined, countOrderId);
+                    }
+                    else {
+                        _this.stopSlimLoadingBar();
+                        _this.showMsgError(parseInt(cieloPaymentReturn.Payment.ReturnCode), cieloPaymentReturn.Payment.ReturnMessage);
+                        $('#btnDoPaymentForSaleCreditCard').prop("disabled", false);
+                    }
                     $('#btnDoPaymentForSaleCreditCard').prop("disabled", false);
-                }
-                $('#btnDoPaymentForSaleCreditCard').prop("disabled", false);
-            }, function (error) {
-                _this.handleError(error);
-                $('#btnDoPaymentForSaleCreditCard').prop("disabled", false);
-            });
-        }
-        else if (this.paymentMethod === 'DEBIT') {
-            $('#btnDoPaymentForSaleDebitCard').prop("disabled", true);
-            var debitPayment = {
-                MerchantOrderId: "2014121201",
-                Customer: {
-                    Name: this.client.name
-                },
-                Payment: {
-                    Type: "DebitCard",
-                    ReturnUrl: "http://localhost:4200",
-                    Amount: this.payment.Amount,
-                    DebitCard: this.payment.DebitCard
-                }
-            };
-            this.billToPayService.paymentDebitCard(debitPayment).subscribe(function (cieloPaymentReturn) {
-                console.log(cieloPaymentReturn);
-                if (cieloPaymentReturn.Payment.Status === 1 || cieloPaymentReturn.Payment.Status === 2) {
-                    var toastOptions = {
-                        title: "Pagamento Realizado",
-                        showClose: true,
-                        timeout: 4000
-                    };
-                    _this.toastyService.success(toastOptions);
-                    _this.saveCieloPayment(cieloPaymentReturn, undefined);
+                }, function (error) {
+                    _this.handleError(error);
+                    $('#btnDoPaymentForSaleCreditCard').prop("disabled", false);
+                });
+            }
+            else if (_this.paymentMethod === 'DEBIT') {
+                $('#btnDoPaymentForSaleDebitCard').prop("disabled", true);
+                var debitPayment = {
+                    MerchantOrderId: countOrderId.toString(),
+                    Customer: {
+                        Name: _this.client.name
+                    },
+                    Payment: {
+                        Type: "DebitCard",
+                        Amount: _this.payment.Amount,
+                        ReturnUrl: "http://localhost:4200",
+                        DebitCard: _this.payment.DebitCard
+                    }
+                };
+                _this.billToPayService.paymentDebitCard(debitPayment).subscribe(function (cieloPaymentReturn) {
+                    if (cieloPaymentReturn.Payment.Status === 1 || cieloPaymentReturn.Payment.Status === 2) {
+                        var toastOptions = {
+                            title: "Pagamento Realizado",
+                            showClose: true,
+                            timeout: 4000
+                        };
+                        _this.toastyService.success(toastOptions);
+                        _this.saveCieloPayment(cieloPaymentReturn, undefined, countOrderId);
+                        $('#btnDoPaymentForSaleDebitCard').prop("disabled", false);
+                    }
+                    else {
+                        var toastOptions = {
+                            title: cieloPaymentReturn.Payment.ReturnMessage,
+                            showClose: true,
+                            timeout: 4000
+                        };
+                        _this.toastyService.error(toastOptions);
+                        $('#btnDoPaymentForSaleDebitCard').prop("disabled", false);
+                    }
+                }, function (error) {
+                    _this.handleError(error);
                     $('#btnDoPaymentForSaleDebitCard').prop("disabled", false);
-                }
-                else {
-                    var toastOptions = {
-                        title: cieloPaymentReturn.Payment.ReturnMessage,
-                        showClose: true,
-                        timeout: 4000
-                    };
-                    _this.toastyService.error(toastOptions);
-                    $('#btnDoPaymentForSaleDebitCard').prop("disabled", false);
-                }
-            }, function (error) {
-                _this.handleError(error);
-                $('#btnDoPaymentForSaleDebitCard').prop("disabled", false);
-            });
-        }
+                });
+            }
+        }, function (error) {
+            _this.handleError(error);
+        });
     };
     ForSaleComponent.prototype.handleError = function (error) {
         var _this = this;
         this.stopSlimLoadingBar();
-        console.log(error);
         if (error.json().length > 0) {
             error.json().forEach(function (error) {
                 _this.showMsgError(error.Code, error.Message);
@@ -180,6 +183,9 @@ var ForSaleComponent = (function () {
         }
         else if (error.json() !== undefined) {
             this.showMsgError(error.json().Code, error.json().Message);
+        }
+        else if (error.status !== undefined && error.statusTesxt !== undefined) {
+            this.showMsgError(error.status, error.statusTesxt);
         }
     };
     ForSaleComponent.prototype.stopSlimLoadingBar = function () {
@@ -216,18 +222,19 @@ var ForSaleComponent = (function () {
                 this.toastyService.error({ title: message, showClose: true, timeout: 7000 });
         }
     };
-    ForSaleComponent.prototype.saveCieloPayment = function (cieloPaymentReturn, cardToken) {
+    ForSaleComponent.prototype.saveCieloPayment = function (cieloPaymentReturn, cardToken, countOrderId) {
         var _this = this;
         this.cieloPayment = constants_1.Constants.getCiloPaymentConverted(cieloPaymentReturn, cardToken, true);
         this.cieloPayment.description = this.paymentDescription;
         this.cieloPayment.clientId = this.route.snapshot.params['clientId'];
-        console.log(this.cieloPayment);
+        this.cieloPayment.recurrent = false;
+        this.cieloPayment.cieloPaymentCards.saveCard = false;
+        this.cieloPayment.countOrderId = countOrderId;
         this.cieloPaymentService.create(this.cieloPayment, true).subscribe(function () {
             _this.stopSlimLoadingBar();
-            console.log("showModal");
-            console.log(_this.modalReceiptForSale);
             _this.modalReceiptForSale.show();
         }, function (error) {
+            _this.handleError(error);
         });
     };
     ForSaleComponent.prototype.getCurrentDate = function (format) {

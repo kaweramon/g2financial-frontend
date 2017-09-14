@@ -9,7 +9,7 @@
     <form name="formSearchClient" class="inline-form" style="max-width: 400px; margin-left: auto; margin-right: auto;">
       <div class="col-lg-9 col-md-9">
         <input type="text" name="clientCnpj" class="form-control" placeholder="CNPJ" [(ngModel)]="clientCnpj"
-               [textMask]="{mask: maskCNPJ}">
+               [textMask]="{mask: maskCNPJ}" (keyup.enter)="searchClient()">
       </div>
       <div class="col-lg-3 col-md-3">
         <button type="button" class="btn btn-primary" [disabled]="clientCnpj.length == 0" (click)="searchClient()">Consultar</button>

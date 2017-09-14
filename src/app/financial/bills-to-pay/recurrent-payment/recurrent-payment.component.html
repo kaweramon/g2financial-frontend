@@ -101,15 +101,14 @@
               <p style="margin-top: -15px; text-align: right"><strong>{{totalPayment | number : '1.2-2'}}</strong></p>
               <!--Outros valores-->
               <p class="text-left">******{{getLast4DigitsFromCard()}}</p>
-              <p style="margin-top: -20px; text-align: right">{{payment.Installments}}x</p>
+              <p style="margin-top: -15px; text-align: right">{{payment.Installments}}x</p>
               <p class="text-left">Termino: {{getConvertedDate(payment.RecurrentPayment?.EndDate)}}</p>
-              <p style="margin-top: -15px;text-align: right;">Parcelas: {{getNumberRecurrentInstalments()}}</p>
               <p class="text-left">Transacao: {{cieloPayment?.tid}}</p>
-              <p style="margin-top: -15px;text-align: right;">NSU: {{cieloPayment?.proofOfSale}}</p>
+              <p style="text-align: left;">NSU: {{cieloPayment?.proofOfSale}}</p>
               <hr style="border-top: 1px dashed #8c8b8b;">
               <!--Lista-->
               <p class="text-left">DESCRICAO</p>
-              <p class="text-right" style="margin-top: -15px;">PRECO(R$)</p>
+              <p style="margin-top: -15px; text-align: right">PRECO(R$)</p>
               <div *ngFor="let billToPayPayment of listBillToPayPayment">
                 <p class="text-left">{{billToPayPayment.description}}</p>
                 <p  style="margin-top: -15px;text-align: right">{{billToPayPayment.subTotal | number : '1.2-2'}}</p>

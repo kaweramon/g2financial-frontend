@@ -1,5 +1,5 @@
-import {Component, ElementRef} from '@angular/core';
-import {ActivatedRoute} from '@angular/router';
+import {Component, ElementRef, OnInit} from '@angular/core';
+import {ActivatedRoute, Router} from '@angular/router';
 import {BillToPayService} from './bill-to-pay.service';
 import {BillToPay} from './bill-to-pay';
 import * as moment from 'moment';
@@ -7,7 +7,6 @@ import {Payment} from './payment';
 import {TypeInterestChargeService} from '../type-interest-charge.service';
 import {TypeInterestCharge} from '../type-interest-charge';
 import {BillToPayPayment} from './bill-to-pay-payment';
-import {BilletShippingService} from './billet-payment/billet-shipping.service';
 import {BilletShipping} from './billet-payment/billet-shipping';
 import * as $ from 'jquery';
 import {ClientService} from '../../search-client/client.service';
@@ -19,8 +18,6 @@ import {Client} from '../../search-client/client';
   styleUrls: ['./bills-to-pay.component.css']
 })
 export class BillsToPayComponent {
-
-  public listBillToPay: Array<BillToPay>;
 
   public listBillToPayPayment: Array<any> = [];
 
@@ -54,23 +51,15 @@ export class BillsToPayComponent {
     this.clientService.view(this.route.snapshot.params["clientId"]).subscribe(client => {
       this.client = client;
     });
-    this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(result => {
-      this.listBillToPay = result;
-      this.getListBillToPayPayment();
-    });
     this.typeInterestService.getByType('MENSALIDADE').subscribe(result => {
       this.typeInterestCharge = result;
     });
-  }
-
-  private getListBillToPayPayment(): void {
-    this.listBillToPay.forEach(billToPay => {
-      if (billToPay.listBillToPayPayment !== null && billToPay.listBillToPayPayment.length > 0) {
-        billToPay.listBillToPayPayment.forEach(billToPayPayment => {
-          billToPayPayment.description = billToPay.description;
+    this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(result => {
+      this.listBillToPayPayment = result;
+      if (this.listBillToPayPayment !== undefined && this.listBillToPayPayment.length > 0) {
+        this.listBillToPayPayment.forEach(billToPayPayment => {
           this.isDateLessOrEqualThanToday(billToPayPayment);
           this.calculateInterests(billToPayPayment);
-          this.listBillToPayPayment.push(billToPayPayment);
         });
       }
     });
@@ -110,8 +99,10 @@ export class BillsToPayComponent {
     let month = moment(billToPayment.maturity).add(1, 'd').month();
     let day = moment(billToPayment.maturity).add(1, 'd').date();
     let now = moment();
-    let monthInArrears = parseInt(moment([now.year(), now.month(), now.date()]).diff(moment([year, month, day]), 'months', true).toString(), 10);
-    let daysInArrears = parseInt(moment().diff(moment(billToPayment.maturity).add(1, 'd'), 'days').toString(), 10);
+    let monthInArrears = parseInt(moment([now.year(), now.month(), now.date()]).diff(moment([year, month, day]),
+      'months', true).toString(), 10);
+    let daysInArrears = parseInt(moment().diff(moment(billToPayment.maturity).add(1, 'd'),
+      'days').toString(), 10);
     billToPayment.daysInArrears = daysInArrears;
     let chargesInDayMonths: Array<number> = [];
     if (daysInArrears !== undefined && daysInArrears > 0) {
@@ -134,8 +125,9 @@ export class BillsToPayComponent {
   }
 
   public generateBillet(billetShipping: BilletShipping): void {
-    $('#btnGenerateBillet').prop('disabled', true);
-    this.billetShipping = billetShipping;
+    document.getElementById('ifrOutput').style.display = 'block';
+    $('#btnPrintBillet_' + billetShipping.id).prop('disabled', true);
+    this.billetShipping = Object.assign({}, billetShipping);
     this.billetShipping.clientId = this.route.snapshot.params["clientId"];
     this.billetShipping.isCancel = false;
     let paymentTypes = "";
@@ -150,16 +142,17 @@ export class BillsToPayComponent {
     this.billetShipping.partialPayment = "NAO";
     this.billetShipping.documentNumber = this.ourNumber.substring(
       this.ourNumber.length - 7, this.ourNumber.length - 2);
-    this.billetGenerated = true;
-    this.generateCodeBarCaixa();
-    setTimeout(() => {
+    this.codeBar = "";
+    // this.printBillet();
+    this.generateCodeBarCaixa(this.generateQrCode(this.print()));
+    /*setTimeout(() => {
       this.billetGenerated = true;
       this.generateQrBarCode();
       // this.printBillet();
-    }, 500);
+    }, 500);*/
   }
 
-  private generateCodeBarCaixa(): void {
+  private generateCodeBarCaixa(callback): void {
     // Posição 1-3 -> Identificação do banco (104)
     // Posição 4 -> Código da moeda (9 - Real)
     // TODO: Posição 5 -> DV Geral do Código de Barras
@@ -187,7 +180,7 @@ export class BillsToPayComponent {
     let generalVerifyDigit = this.getVerifyDigitGeneral(maturityFactor, billetValueCalculated, benefictCode,
       dvBenefictCode.toString(), this.billetShipping.ourNumber, dvFreeCamp);
     let field1 = "1049" + benefictCode.charAt(0) + "." + benefictCode.substring(1,5) +
-        this.getVerifyDigitFields123("1049" + benefictCode.charAt(0) + benefictCode.substring(1,5));
+      this.getVerifyDigitFields123("1049" + benefictCode.charAt(0) + benefictCode.substring(1,5));
     let field2 = benefictCode.charAt(benefictCode.length - 1) + dvBenefictCode + this.billetShipping.ourNumber.substring(0,3)
       + ".1" + this.billetShipping.ourNumber.substring(3,6) + "4" +
       this.getVerifyDigitFields123(benefictCode.charAt(benefictCode.length - 1) + dvBenefictCode +
@@ -203,12 +196,14 @@ export class BillsToPayComponent {
       this.getVerifyDigitOurNumber("14" + this.billetShipping.ourNumber);
 
     this.codeBar = codeBarToReturn;
-
+    if (callback) {
+      callback();
+    }
   }
 
   // CÁLCULO DO DÍGITO VERIFICADOR DA LINHA DIGITÁVEL (CAMPOS 1, 2 E 3)
   private getVerifyDigitFields123(strToCalc: string): number {
-    let toReturn: number;
+    let toReturn: number = 0;
     let total: number = 0;
     strToCalc = strToCalc.split("").reverse().join("");
     for (let i = 0; i < strToCalc.length; i++) {
@@ -228,7 +223,13 @@ export class BillsToPayComponent {
       toReturn = 10 - total;
     }
     let restAux = (total / 10).toString().split(".");
-    let rest = parseInt(restAux[1].split("")[restAux[1].split("").length-1]);
+    let rest;
+    if (restAux[1] !== undefined) {
+      // rest = parseInt(restAux[1].split("")[restAux[1].split("").length-1]);
+      rest = (parseInt(restAux[1].split("")[0]) + 1);
+    } else {
+      rest = 0;
+    }
 
     if (rest == 0) {
       toReturn = 0;
@@ -277,6 +278,7 @@ export class BillsToPayComponent {
       toReturn = 1;
     } else {
       rest = (parseInt(restAux[1].split("")[0]) + 1);
+      // rest = parseInt(restAux[1].split("")[restAux[1].split("").length-1]);
     }
 
     if (rest !== undefined) {
@@ -339,7 +341,9 @@ export class BillsToPayComponent {
       let rest: number;
       if (divisionResult[1] !== undefined) {
         if (divisionResult[1].split("").length > 1) {
-          rest = parseInt(divisionResult[1].split("")[0]) + 1;
+          // parseInt(restAux[1].split("")[restAux[1].split("").length-1]);
+          // rest = parseInt(divisionResult[1].split("")[0]) + 1;
+          rest = parseInt(divisionResult[1].split("")[divisionResult[1].split("").length-1]);
         } else {
           rest = (parseInt(divisionResult[1].split("")[0]));
         }
@@ -347,6 +351,9 @@ export class BillsToPayComponent {
         rest = 0;
       }
       result = 11 - rest;
+    }
+    if (result > 9) {
+      result = 0;
     }
     return result;
   }
@@ -395,6 +402,33 @@ export class BillsToPayComponent {
     }
     return toReturn;
   }
+
+  private generateQrCode(callback): void {
+    let s = document.createElement("script");
+    s.type = "text/javascript";
+    s.src = "src/app/financial/bills-to-pay/billet-payment/billet-barcode.js";
+    this.elementRef.nativeElement.appendChild(s);
+    if (callback) {
+      callback();
+    }
+  }
+
+  public getCurrentDate(): string {
+    return moment().format('DD/MM/YYYY');
+  }
+
+  public getMaturityDate(date): string {
+    return moment(date).add(1, 'd').format('DD/MM/YYYY');
+  }
+
+  private print(): void {
+    $('#btnPrintBillet_' + this.billetShipping.id).prop('disabled', false);
+    let s2 = document.createElement("script");
+    s2.type = "text/javascript";
+    s2.src = "src/app/financial/bills-to-pay/print-billet.js";
+    this.elementRef.nativeElement.appendChild(s2);
+  }
+
 
   private generateCodeBar(): void {
     // Primeiro Grupo
@@ -492,115 +526,8 @@ export class BillsToPayComponent {
     // Quinto Grupo -> Fator de Vencimento e Valor Nominal
     let codeBarFifthGroup = factorMaturity + nominalValue;
     this.codeBar = codeBarFirstGroup + " " + codeBarSecondGroup + " " + codeBarThirdGroup + " " + numberVerifyDigit + " " + codeBarFifthGroup;
-    console.log("Código de Barras: " + this.codeBar);
-    console.log(this.getMaturityFactor('2006-08-23'));
-    console.log(this.getBilletCodeBarValue(this.totalPayment));
-    console.log("dig cod. beneficiário: " + this.getVerifyDigitBeneficiaryCode("005507"));
     //Código do beneficiário: 45000
     //DV do Código do Beneficiário = 0
   }
-
-  private generateQrBarCode(): void {
-    let s = document.createElement("script");
-    s.type = "text/javascript";
-    s.src = "src/app/financial/bills-to-pay/billet-payment/billet-barcode.js";
-    this.elementRef.nativeElement.appendChild(s);
-    setTimeout(() => {
-      this.printBillet();
-    }, 2000);
-  }
-
-  public printBillet(): void {
-    // tablebillet
-
-    let printContents, popupWin;
-    printContents = document.getElementById('tablebillet').innerHTML;
-    popupWin = window.open('', '_blank', 'top=0,left=0,height=100%,width=auto');
-    popupWin.document.open();
-    popupWin.document.write(`
-      <html>
-        <head>
-          <style>
-          .logo{
-  text-align: center; height: 10mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000
-}
-.img-logo {
-  content: url('../../../assets/images/logo_caixa.png');
-}
-.bankCode {
-  font-size: 5mm; font-family: arial, verdana; font-weight : bold;
-  font-style: italic; text-align: center; vertical-align: bottom;
-  padding-right: 1mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000
-}
-.bankCode2 {
-  font-size: 5mm; font-family: arial, verdana; font-weight : bold;
-  font-style: italic; text-align: center; vertical-align: bottom;
-  /*border-bottom: 1.2mm solid #000000; border-right: 1.2mm solid #000000;*/
-}
-.billetNumber {
-  font-size: 3.2mm; font-family: arial, verdana; font-weight : bold;
-  text-align: center; vertical-align: bottom; padding-bottom : 1mm;
-  border-bottom: 1mm solid #000000;
-}
-.billetRightHeader {
-  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;
-  border-bottom: 1mm solid #000000; font-weight : bold;
-}
-.billetRightHeader2 {
-  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;
-}
-.billetRightField {
-  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;
-  border-left: 0.15mm solid #000000;
-}
-.billetRightFieldBorderNone {
-  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;
-}
-.billetLeftField2 {
-  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; border-left: 0.15mm solid #000000;
-}
-.billetLeftField {
-  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;
-}
-.billetLeftValue {
-  font-size: 0.29cm; font-family: arial, verdana; padding-left : 1mm;
-  border-left: 0.15mm solid #000000; border-bottom: 0.15mm solid #000000;
-  font-weight: bold;
-}
-.billetLeftValueBorderNone {
-  font-size: 0.29cm; font-family: arial, verdana; padding-left : 1mm;
-  font-weight: bold;
-}
-.billetLeftValue2 {
-  font-size: 3mm; font-family: arial, verdana; padding-left : 1mm;
-  text-align: center; font-weight: bold; border-left: 0.15mm solid #000000;
-  border-bottom: 0.15mm solid #000000;
-}
-.billetLeftValue3 {
-  font-size: 0.29cm; font-family: arial, verdana; padding-left : 1mm;
-  text-align: left; font-weight: bold; border-left: 0.15mm solid #000000;
-}
-.billetRightTextValue {
-  font-size: 0.29cm; font-family: arial, verdana; text-align:right;
-  padding-right: 1mm; font-weight: bold; border-left: 0.15mm solid #000000; border-bottom: 0.15mm solid #000000;
-}
-.billetLeftTextValue2 {
-  font-size: 0.29cm; font-family: arial, verdana;
-  padding-left: 1mm; font-weight: bold; border-left: 0.15mm solid #000000;
-}
-.tr-border-bottom {
-  border-bottom: 0.15mm solid #000000;
-}
-</style>
-          <title>Comprovante</title>
-        </head>
-    <body onload="window.print();window.close()">${printContents}</body>
-      </html>`
-    );
-    popupWin.document.close();
-  }
-
-
-
 
 }
