@@ -1,7 +1,6 @@
-import {Component, ElementRef, OnInit} from '@angular/core';
-import {ActivatedRoute, Router} from '@angular/router';
+import {Component, ElementRef, ViewChild} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
 import {BillToPayService} from './bill-to-pay.service';
-import {BillToPay} from './bill-to-pay';
 import * as moment from 'moment';
 import {Payment} from './payment';
 import {TypeInterestChargeService} from '../type-interest-charge.service';
@@ -11,6 +10,10 @@ import {BilletShipping} from './billet-payment/billet-shipping';
 import * as $ from 'jquery';
 import {ClientService} from '../../search-client/client.service';
 import {Client} from '../../search-client/client';
+import {ModalDirective} from 'ngx-bootstrap';
+import {BankService} from './bank.service';
+import {Bank} from './bank';
+import {SlimLoadingBarService} from 'ng2-slim-loading-bar';
 
 @Component({
   selector: 'app-bills-to-pay',
@@ -39,12 +42,28 @@ export class BillsToPayComponent {
 
   public billetShipping: BilletShipping;
 
-  public billetGenerated: boolean = false;
-
   public client: Client = new Client();
 
+  public bank: Bank;
+
+  public codeBarFirstGroup: string;
+  public codeBarSecondGroup: string;
+  public codeBarThirdGroup: string;
+  public generalVerifyDigit: any;
+  public codeBarFourGroup: string;
+
+  @ViewChild('modalLateBill')
+  public modalLateBill: ModalDirective;
+
+  @ViewChild('modalChoosePrintType')
+  public modalChoosePrintType: ModalDirective;
+
+  @ViewChild('modalInfoBilletLate')
+  public modalInfoBilletLate: ModalDirective;
+
   constructor(private route: ActivatedRoute, private service: BillToPayService, private elementRef:ElementRef,
-              private typeInterestService: TypeInterestChargeService, private clientService: ClientService) {
+              private bankService: BankService,private typeInterestService: TypeInterestChargeService,
+              private clientService: ClientService, private slimLoadingBarService: SlimLoadingBarService) {
     this.payment = new Payment();
     //TODO: remover
     this.paymentMethod = 'BILLET';
@@ -54,6 +73,7 @@ export class BillsToPayComponent {
     this.typeInterestService.getByType('MENSALIDADE').subscribe(result => {
       this.typeInterestCharge = result;
     });
+    this.slimLoadingBarService.start();
     this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(result => {
       this.listBillToPayPayment = result;
       if (this.listBillToPayPayment !== undefined && this.listBillToPayPayment.length > 0) {
@@ -62,7 +82,15 @@ export class BillsToPayComponent {
           this.calculateInterests(billToPayPayment);
         });
       }
+      this.stopSlimLoadBar();
+    }, error => {
+      this.stopSlimLoadBar();
     });
+  }
+
+  private stopSlimLoadBar(): void {
+    this.slimLoadingBarService.stop();
+    this.slimLoadingBarService.complete();
   }
 
   public payBills(): void {
@@ -124,7 +152,7 @@ export class BillsToPayComponent {
     }
   }
 
-  public generateBillet(billetShipping: BilletShipping): void {
+  public generateBillet(billetShipping: BilletShipping, bankId: number): void {
     document.getElementById('ifrOutput').style.display = 'block';
     $('#btnPrintBillet_' + billetShipping.id).prop('disabled', true);
     this.billetShipping = Object.assign({}, billetShipping);
@@ -144,7 +172,11 @@ export class BillsToPayComponent {
       this.ourNumber.length - 7, this.ourNumber.length - 2);
     this.codeBar = "";
     // this.printBillet();
-    this.generateCodeBarCaixa(this.generateQrCode(this.print()));
+    this.bankService.getBankById(bankId).subscribe(bank => {
+      this.bank = bank;
+      this.generateCodeBarCaixa(this.generateQrCode(this.print()));
+    });
+
     /*setTimeout(() => {
       this.billetGenerated = true;
       this.generateQrBarCode();
@@ -155,7 +187,6 @@ export class BillsToPayComponent {
   private generateCodeBarCaixa(callback): void {
     // Posição 1-3 -> Identificação do banco (104)
     // Posição 4 -> Código da moeda (9 - Real)
-    // TODO: Posição 5 -> DV Geral do Código de Barras
     let codeBarToReturn: string = "";
     // Posição 06 - 09 -> Fator de Vencimento
     let maturityFactor = this.getMaturityFactor(this.billetShipping.maturityDate);
@@ -177,8 +208,9 @@ export class BillsToPayComponent {
     // 44 – 44 1 9 (1) DV do Campo Livre
     // Código do beneficiário -> 377192
     let dvFreeCamp = this.getFreeCampCodeBar("377192", dvBenefictCode.toString(), this.billetShipping.ourNumber);
-    let generalVerifyDigit = this.getVerifyDigitGeneral(maturityFactor, billetValueCalculated, benefictCode,
+    this.generalVerifyDigit = this.getVerifyDigitGeneral(maturityFactor, billetValueCalculated, benefictCode,
       dvBenefictCode.toString(), this.billetShipping.ourNumber, dvFreeCamp);
+
     let field1 = "1049" + benefictCode.charAt(0) + "." + benefictCode.substring(1,5) +
       this.getVerifyDigitFields123("1049" + benefictCode.charAt(0) + benefictCode.substring(1,5));
     let field2 = benefictCode.charAt(benefictCode.length - 1) + dvBenefictCode + this.billetShipping.ourNumber.substring(0,3)
@@ -190,7 +222,13 @@ export class BillsToPayComponent {
       this.getVerifyDigitFields123(this.billetShipping.ourNumber.substring(6, 11) +
         this.billetShipping.ourNumber.substring(11, this.billetShipping.ourNumber.length) + dvFreeCamp);
 
-    codeBarToReturn = field1 + " " + field2 + " " + field3 + " " + generalVerifyDigit + " " + maturityFactor + billetValueCalculated;
+    this.codeBarFirstGroup = field1.replace(".", "").replace(" ", "");
+    this.codeBarSecondGroup = field2.replace(".", "").replace(" ", "");
+    this.codeBarThirdGroup = field3.replace(".", "").replace(" ", "");
+    this.codeBarFourGroup = maturityFactor
+      + billetValueCalculated.replace(".", "").replace(" ", "");
+
+    codeBarToReturn = field1 + " " + field2 + " " + field3 + " " + this.generalVerifyDigit + " " + maturityFactor + billetValueCalculated;
 
     this.billetShipping.ourNumber = "14" + this.billetShipping.ourNumber + "-" +
       this.getVerifyDigitOurNumber("14" + this.billetShipping.ourNumber);
@@ -222,14 +260,7 @@ export class BillsToPayComponent {
     if (total < 10) {
       toReturn = 10 - total;
     }
-    let restAux = (total / 10).toString().split(".");
-    let rest;
-    if (restAux[1] !== undefined) {
-      // rest = parseInt(restAux[1].split("")[restAux[1].split("").length-1]);
-      rest = (parseInt(restAux[1].split("")[0]) + 1);
-    } else {
-      rest = 0;
-    }
+    let rest = total % 10;
 
     if (rest == 0) {
       toReturn = 0;
@@ -272,15 +303,7 @@ export class BillsToPayComponent {
         total += parseInt(calcStrArray[i]) * 5;
       }
     }
-    let restAux = (total / 11).toString().split(".");
-    let rest: number;
-    if (restAux[1] === undefined) {
-      toReturn = 1;
-    } else {
-      rest = (parseInt(restAux[1].split("")[0]) + 1);
-      // rest = parseInt(restAux[1].split("")[restAux[1].split("").length-1]);
-    }
-
+    let rest = total % 11;
     if (rest !== undefined) {
       if ((11 - rest) > 9) {
         toReturn = 1;
@@ -307,8 +330,7 @@ export class BillsToPayComponent {
     }
     let rest: number = 0;
     if (total >= 11) {
-      let restAux = (total / 11).toString().split(".");
-      rest = parseInt(restAux[1].split("")[restAux[1].split("").length-1]);
+      rest = total % 11;
       toReturn = (11 - rest);
     } else {
       toReturn = (11 - total);
@@ -337,19 +359,7 @@ export class BillsToPayComponent {
     if (total < 11) {
       result = total - 11;
     } else {
-      let divisionResult = (total / 11).toString().split(".");
-      let rest: number;
-      if (divisionResult[1] !== undefined) {
-        if (divisionResult[1].split("").length > 1) {
-          // parseInt(restAux[1].split("")[restAux[1].split("").length-1]);
-          // rest = parseInt(divisionResult[1].split("")[0]) + 1;
-          rest = parseInt(divisionResult[1].split("")[divisionResult[1].split("").length-1]);
-        } else {
-          rest = (parseInt(divisionResult[1].split("")[0]));
-        }
-      } else {
-        rest = 0;
-      }
+      let rest: number = total % 11;
       result = 11 - rest;
     }
     if (result > 9) {
@@ -380,7 +390,6 @@ export class BillsToPayComponent {
 
   private getVerifyDigitOurNumber(ourNumber: string): number {
     let toReturn: number;
-
     let ourNumberInverted = ourNumber.split("").reverse().join("");
 
     let total = 0;
@@ -389,12 +398,10 @@ export class BillsToPayComponent {
       if (i == 8 || i == 16) {
         multiplicationIndex = 2;
       }
-      total += parseInt(ourNumberInverted[i]) * multiplicationIndex;
+      total += (parseInt(ourNumberInverted[i]) * multiplicationIndex);
       multiplicationIndex++;
     }
-    let rest: number;
-    let restAux = (total / 11).toString().split(".");
-    rest = ((parseInt(restAux[1].split("").pop())) + 1);
+    let rest: number = total % 11;
     if ((11 - rest) > 9) {
       toReturn = 0;
     } else {
@@ -406,11 +413,25 @@ export class BillsToPayComponent {
   private generateQrCode(callback): void {
     let s = document.createElement("script");
     s.type = "text/javascript";
-    s.src = "src/app/financial/bills-to-pay/billet-payment/billet-barcode.js";
+    s.src = "src/app/financial/bills-to-pay/generate_barcode_print_80mm.js";
     this.elementRef.nativeElement.appendChild(s);
     if (callback) {
-      callback();
+        callback();
     }
+  }
+
+  private generateBarCodeAndPrint80mm(): void {
+    let s = document.createElement("script");
+    s.type = "text/javascript";
+    s.src = "src/app/financial/bills-to-pay/generate_barcode_print_80mm.js";
+    this.elementRef.nativeElement.appendChild(s);
+  }
+
+  private generateBarCodeAndPrint(): void {
+    let s = document.createElement("script");
+    s.type = "text/javascript";
+    s.src = "src/app/financial/bills-to-pay/generate_barcode_print.js";
+    this.elementRef.nativeElement.appendChild(s);
   }
 
   public getCurrentDate(): string {
@@ -429,6 +450,13 @@ export class BillsToPayComponent {
     this.elementRef.nativeElement.appendChild(s2);
   }
 
+  private print80mm(): void {
+    $('#btnPrintBillet_' + this.billetShipping.id).prop('disabled', false);
+    let scriptPrintBillet80mm = document.createElement("script");
+    scriptPrintBillet80mm.type = "text/javascript";
+    scriptPrintBillet80mm.src = "src/app/financial/bills-to-pay/print-billet-80mm.js";
+    this.elementRef.nativeElement.appendChild(scriptPrintBillet80mm);
+  }
 
   private generateCodeBar(): void {
     // Primeiro Grupo
@@ -528,6 +556,40 @@ export class BillsToPayComponent {
     this.codeBar = codeBarFirstGroup + " " + codeBarSecondGroup + " " + codeBarThirdGroup + " " + numberVerifyDigit + " " + codeBarFifthGroup;
     //Código do beneficiário: 45000
     //DV do Código do Beneficiário = 0
+  }
+
+  public showModalBillet(billetShipping: BilletShipping, bankId: number): void {
+    this.billetShipping = Object.assign({}, billetShipping);
+    this.bankService.getBankById(bankId).subscribe(bank => {
+      this.bank = bank;
+      this.generateCodeBarCaixa(undefined);
+      this.modalLateBill.show();
+    });
+  }
+
+  public showModalChoosePrintType(billetShipping: BilletShipping, bankId: number): void {
+    this.billetShipping = Object.assign({}, billetShipping);
+    this.bankService.getBankById(bankId).subscribe(bank => {
+      this.bank = bank;
+      this.generateCodeBarCaixa(undefined);
+      this.modalChoosePrintType.show();
+    });
+  }
+
+  onNotify(msg:any): void {
+    if (msg.message === 'printBillet') {
+      document.getElementById('ifrOutput').style.display = 'block';
+      this.generateBarCodeAndPrint();
+    }
+    if (msg.message === 'printBillet80mm') {
+      document.getElementById('ifrOutput80mm').style.display = 'block';
+      this.generateBarCodeAndPrint80mm();
+      // this.print80mm();
+    }
+  }
+
+  public isBilletOld(maturityDate: Date): Boolean {
+    return moment(maturityDate) < moment([2017, 9, 1]);
   }
 
 }

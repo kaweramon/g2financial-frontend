@@ -7,6 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
+var moment = require("moment");
 var BilletPaymentComponent = (function () {
     function BilletPaymentComponent(elementRef, route, billetService, clientService) {
         var _this = this;
@@ -27,6 +28,12 @@ var BilletPaymentComponent = (function () {
             }
         });
     }
+    BilletPaymentComponent.prototype.getMaturityDate = function (date) {
+        return moment(date).add(1, 'd').format('DD/MM/YYYY');
+    };
+    BilletPaymentComponent.prototype.getCurrentDate = function () {
+        return moment().format('DD/MM/YYYY');
+    };
     return BilletPaymentComponent;
 }());
 __decorate([

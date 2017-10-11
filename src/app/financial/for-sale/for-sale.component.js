@@ -144,30 +144,31 @@ var ForSaleComponent = (function () {
                         DebitCard: _this.payment.DebitCard
                     }
                 };
-                _this.billToPayService.paymentDebitCard(debitPayment).subscribe(function (cieloPaymentReturn) {
-                    if (cieloPaymentReturn.Payment.Status === 1 || cieloPaymentReturn.Payment.Status === 2) {
-                        var toastOptions = {
-                            title: "Pagamento Realizado",
-                            showClose: true,
-                            timeout: 4000
-                        };
-                        _this.toastyService.success(toastOptions);
-                        _this.saveCieloPayment(cieloPaymentReturn, undefined, countOrderId);
-                        $('#btnDoPaymentForSaleDebitCard').prop("disabled", false);
-                    }
-                    else {
-                        var toastOptions = {
-                            title: cieloPaymentReturn.Payment.ReturnMessage,
-                            showClose: true,
-                            timeout: 4000
-                        };
-                        _this.toastyService.error(toastOptions);
-                        $('#btnDoPaymentForSaleDebitCard').prop("disabled", false);
-                    }
-                }, function (error) {
-                    _this.handleError(error);
-                    $('#btnDoPaymentForSaleDebitCard').prop("disabled", false);
-                });
+                console.log(JSON.stringify(debitPayment));
+                /*this.billToPayService.paymentDebitCard(debitPayment).subscribe(cieloPaymentReturn => {
+                  if (cieloPaymentReturn.Payment.Status === 1 || cieloPaymentReturn.Payment.Status === 2) {
+                    let toastOptions: ToastOptions = {
+                      title: "Pagamento Realizado",
+                      showClose: true,
+                      timeout: 4000
+                    };
+                    this.toastyService.success(toastOptions);
+                    this.saveCieloPayment(cieloPaymentReturn, undefined, countOrderId);
+                    $('#btnDoPaymentForSaleDebitCard').prop("disabled",false);
+                  } else {
+                    let toastOptions: ToastOptions = {
+                      title: cieloPaymentReturn.Payment.ReturnMessage,
+                      showClose: true,
+                      timeout: 4000
+                    };
+                    this.toastyService.error(toastOptions);
+                    $('#btnDoPaymentForSaleDebitCard').prop("disabled",false);
+                  }
+        
+                }, error => {
+                  this.handleError(error);
+                  $('#btnDoPaymentForSaleDebitCard').prop("disabled",false);
+                })*/
             }
         }, function (error) {
             _this.handleError(error);

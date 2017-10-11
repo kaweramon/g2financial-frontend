@@ -170,7 +170,8 @@ export class ForSaleComponent {
             DebitCard: this.payment.DebitCard
           }
         };
-        this.billToPayService.paymentDebitCard(debitPayment).subscribe(cieloPaymentReturn => {
+        console.log(JSON.stringify(debitPayment));
+        /*this.billToPayService.paymentDebitCard(debitPayment).subscribe(cieloPaymentReturn => {
           if (cieloPaymentReturn.Payment.Status === 1 || cieloPaymentReturn.Payment.Status === 2) {
             let toastOptions: ToastOptions = {
               title: "Pagamento Realizado",
@@ -193,7 +194,7 @@ export class ForSaleComponent {
         }, error => {
           this.handleError(error);
           $('#btnDoPaymentForSaleDebitCard').prop("disabled",false);
-        })
+        })*/
       }
     }, error => {
       this.handleError(error);

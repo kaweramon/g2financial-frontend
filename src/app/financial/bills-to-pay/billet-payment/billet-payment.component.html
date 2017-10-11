@@ -27,14 +27,9 @@
           <tr>
             <td colspan=4 class="logo">
               <img style="max-height: 50px" src="http://www.inovemoveis.com.br/franquias/2/14830/editor-html/575822.jpg"/>
-              <!--<img id="img-caixa" style="max-height: 40px;max-width: 195px;margin-bottom: 2px;" class="img-logo"/>-->
             </td>
             <td colspan="2" class="bankCode">104-0</td>
             <td colspan="5" class="billetNumber">
-              <!--Code Bar-->
-              <!--Beneficiário
-              <p style="padding-top: 5px;font-family: arial, verdana;font-size: 0.2cm;" class="text-right">
-                G2 Soft Comercio LTDA - ME, Rua Presidente Kennedy, 122, Centro. 14.272.237/0001-36</p>-->
               {{codeBar}}
             </td>
           </tr>
@@ -94,7 +89,7 @@
             <td colspan=2 class="billetRightFieldBorderNone text-right">Autenticação Mecânica</td>
           </tr>
           <tr>
-            <td colspan=11 class="billetLeftValueBorderNone">REFERENTE: {{getCurrentDate('DD/MM/YYYY')}}</td>
+            <td colspan=11 class="billetLeftValueBorderNone">REFERENTE: {{getCurrentDate()}}</td>
           </tr>
           <tr>
             <td colspan=11 class="billetLeftValueBorderNone">COBRANÇA: {{billetShipping?.chargingType}}</td>

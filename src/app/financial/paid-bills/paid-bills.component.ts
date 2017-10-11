@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {Component} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {BillToPayService} from '../bills-to-pay/bill-to-pay.service';
 import * as moment from 'moment';
@@ -8,22 +8,19 @@ import * as moment from 'moment';
   templateUrl: './paid-bills.component.html',
   styleUrls: ['./paid-bills.component.css']
 })
-export class PaidBillsComponent implements OnInit {
+export class PaidBillsComponent {
 
   public listPaidBills: Array<any> = [];
 
   public listBillToPayPayment: Array<any> = [];
 
-  constructor(private route: ActivatedRoute, private service: BillToPayService) { }
-
-  public page: any;
-
-  ngOnInit() {
+  constructor(private route: ActivatedRoute, private service: BillToPayService) {
     this.service.listByClientId(this.route.snapshot.params['clientId'], "SIM").subscribe(result => {
-      this.listPaidBills = result;
-      // this.getListBillToPayPayment();
+      this.listBillToPayPayment = result;
     });
   }
+
+  public page: any;
 
   private getListBillToPayPayment(): void {
     this.listPaidBills.forEach(billToPay => {

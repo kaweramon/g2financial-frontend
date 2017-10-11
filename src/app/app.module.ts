@@ -29,6 +29,10 @@ import { LOCALE_ID } from '@angular/core';
 import { ForSaleComponent } from './financial/for-sale/for-sale.component';
 import {CurrencyMaskModule} from 'ng2-currency-mask';
 import {CommonModule} from '@angular/common';
+import { ModalLateBilletComponent } from './financial/bills-to-pay/modal-late-billet/modal-late-billet.component';
+import {BankService} from './financial/bills-to-pay/bank.service';
+import { ModalChoosePrintTypeComponent } from './financial/bills-to-pay/modal-choose-print-type/modal-choose-print-type.component';
+import { InfoBilletLateComponent } from './financial/bills-to-pay/info-billet-late/info-billet-late.component';
 
 @NgModule({
   declarations: [
@@ -41,7 +45,10 @@ import {CommonModule} from '@angular/common';
     CreditCardPaymentComponent,
     BilletPaymentComponent,
     RecurrentPaymentComponent,
-    ForSaleComponent
+    ForSaleComponent,
+    ModalLateBilletComponent,
+    ModalChoosePrintTypeComponent,
+    InfoBilletLateComponent
   ],
   imports: [
     BrowserModule,
@@ -59,7 +66,7 @@ import {CommonModule} from '@angular/common';
     CurrencyMaskModule
   ],
   providers: [ClientService, BillToPayService, TypeInterestChargeService, BillToPayAmountsPaidService,
-    BillToPayPaymentService, CieloPaymentService, BilletShippingService, {provide: LOCALE_ID, useValue: 'pt-BR'}],
+    BillToPayPaymentService, CieloPaymentService, BilletShippingService, BankService, {provide: LOCALE_ID, useValue: 'pt-BR'}],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

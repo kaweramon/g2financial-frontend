@@ -36,6 +36,10 @@ var core_2 = require("@angular/core");
 var for_sale_component_1 = require("./financial/for-sale/for-sale.component");
 var ng2_currency_mask_1 = require("ng2-currency-mask");
 var common_1 = require("@angular/common");
+var modal_late_billet_component_1 = require("./financial/bills-to-pay/modal-late-billet/modal-late-billet.component");
+var bank_service_1 = require("./financial/bills-to-pay/bank.service");
+var modal_choose_print_type_component_1 = require("./financial/bills-to-pay/modal-choose-print-type/modal-choose-print-type.component");
+var info_billet_late_component_1 = require("./financial/bills-to-pay/info-billet-late/info-billet-late.component");
 var AppModule = (function () {
     function AppModule() {
     }
@@ -53,7 +57,10 @@ AppModule = __decorate([
             credit_card_payment_component_1.CreditCardPaymentComponent,
             billet_payment_component_1.BilletPaymentComponent,
             recurrent_payment_component_1.RecurrentPaymentComponent,
-            for_sale_component_1.ForSaleComponent
+            for_sale_component_1.ForSaleComponent,
+            modal_late_billet_component_1.ModalLateBilletComponent,
+            modal_choose_print_type_component_1.ModalChoosePrintTypeComponent,
+            info_billet_late_component_1.InfoBilletLateComponent
         ],
         imports: [
             platform_browser_1.BrowserModule,
@@ -71,7 +78,7 @@ AppModule = __decorate([
             ng2_currency_mask_1.CurrencyMaskModule
         ],
         providers: [client_service_1.ClientService, bill_to_pay_service_1.BillToPayService, type_interest_charge_service_1.TypeInterestChargeService, bill_to_pay_amounts_paid_service_1.BillToPayAmountsPaidService,
-            bill_to_pay_payment_service_1.BillToPayPaymentService, cielo_payment_service_1.CieloPaymentService, billet_shipping_service_1.BilletShippingService, { provide: core_2.LOCALE_ID, useValue: 'pt-BR' }],
+            bill_to_pay_payment_service_1.BillToPayPaymentService, cielo_payment_service_1.CieloPaymentService, billet_shipping_service_1.BilletShippingService, bank_service_1.BankService, { provide: core_2.LOCALE_ID, useValue: 'pt-BR' }],
         bootstrap: [app_component_1.AppComponent]
     })
 ], AppModule);

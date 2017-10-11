@@ -36,8 +36,12 @@ export class BilletPaymentComponent {
     });
   }
 
+  public getMaturityDate(date): string {
+    return moment(date).add(1, 'd').format('DD/MM/YYYY');
+  }
 
-
-
+  public getCurrentDate(): string {
+    return moment().format('DD/MM/YYYY');
+  }
 
 }

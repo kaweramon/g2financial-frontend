@@ -1,5 +1,8 @@
 <ng2-toasty></ng2-toasty>
-<div class="col-lg-12 col-md-12" style="padding: 0px;" *ngIf="!isPaymentSelected">
+<div class="col-lg-12 col-md-12" style="padding: 0px">
+  <ng2-slim-loading-bar></ng2-slim-loading-bar>
+</div>
+<div class="col-lg-12 col-md-12" style="padding: 0px;" *ngIf="!isPaymentSelected && listBillToPayPayment.length > 0">
   <table class="table table-bordered">
     <thead>
       <tr>
@@ -22,15 +25,25 @@
         <td class="text-left" style="color: red;" *ngIf="billToPayPayment.dateStatus === 'IS_BEFORE'">
           {{billToPayPayment.description}}&nbsp;-&nbsp;VENCIDO
         </td>
-        <td class="text-center">R$ {{billToPayPayment.amount}}</td>
+        <td class="text-center">R$ {{billToPayPayment.amount | number : '1.2-2'}}</td>
         <td class="text-center">
           <input type="checkbox" [(ngModel)]="billToPayPayment.isChecked">
         </td>
-        <td>
+        <td *ngIf="!isBilletOld(billToPayPayment.maturity)">
           <button *ngIf="billToPayPayment.billetShipping !== null &&
-          billToPayPayment.billetShipping !== undefined" class="btn btn-primary" id="btnPrintBillet_{{billToPayPayment.billetShipping?.id}}"
-          (click)="generateBillet(billToPayPayment.billetShipping)">
+          billToPayPayment.billetShipping !== undefined && billToPayPayment.dateStatus !== 'IS_BEFORE'" class="btn btn-primary" id="btnPrintBillet_{{billToPayPayment.billetShipping?.id}}"
+          (click)="showModalChoosePrintType(billToPayPayment.billetShipping, billToPayPayment.bankId)">
             <span class="fa fa-file-text-o"></span>&nbsp;Boleto
+          </button>
+          <button *ngIf="billToPayPayment.billetShipping !== null &&
+          billToPayPayment.billetShipping !== undefined && billToPayPayment.dateStatus === 'IS_BEFORE'" class="btn btn-primary" id="btnPrintBilletBefore_{{billToPayPayment.billetShipping?.id}}"
+                  (click)="showModalBillet(billToPayPayment.billetShipping, billToPayPayment.bankId)">
+            <span class="fa fa-file-text-o"></span>&nbsp;Boleto
+          </button>
+        </td>
+        <td *ngIf="isBilletOld(billToPayPayment.maturity)" (click)="modalInfoBilletLate.show()">
+          <button class="btn btn-default">
+            <span class="fa fa-info"></span>
           </button>
         </td>
       </tr>
@@ -40,12 +53,35 @@
                        nextLabel="Próximo"
                        (pageChange)="page = $event">
   </pagination-controls>
+
+  <div bsModal id="modalLateBill" #modalLateBill="bs-modal" #childModal="bs-modal" class="modal fade"
+       tabindex="-1" role="dialog"
+       aria-labelledby="myLargeModalLabel" aria-hidden="true">
+    <app-modal-late-billet [codeBar]="codeBar" [modalLateBill]="modalLateBill" [billetShipping]="billetShipping"
+                           [bank]="bank" (notify)="onNotify($event)" [codeBarFirstGroup]="codeBarFirstGroup"
+    [codeBarSecondGroup]="codeBarSecondGroup" [codeBarThirdGroup]="codeBarThirdGroup" [verifyDigit]="generalVerifyDigit"
+    [codeBarFourGroup]="codeBarFourGroup">
+    </app-modal-late-billet>
+  </div>
+
+  <div bsModal id="modalChoosePrintType" #modalChoosePrintType="bs-modal" #childModal="bs-modal" class="modal fade"
+       tabindex="-1" role="dialog"
+       aria-labelledby="myLargeModalLabel" aria-hidden="true">
+    <app-modal-choose-print-type [modalChoosePrintType]="modalChoosePrintType" (notify)="onNotify($event)"></app-modal-choose-print-type>
+  </div>
+
+  <div bsModal id="modalInfoBilletLate" #modalInfoBilletLate="bs-modal" #childModal="bs-modal" class="modal fade"
+       tabindex="-1" role="dialog"
+       aria-labelledby="myLargeModalLabel" aria-hidden="true">
+    <app-info-billet-late [modal]="modalInfoBilletLate"></app-info-billet-late>
+  </div>
+
 </div>
 <div class="row">
   <div class="col-lg-9 col-md-9"  *ngIf="!isPaymentSelected">
     <!--<img src="http://cielohlg.sensedia.com/api-portal/sites/default/files/selo4.png" style="cursor: pointer" (click)="payBills()" />-->
   </div>
-  <div class="col-lg-3 col-md-3" *ngIf="!isPaymentSelected">
+  <div class="col-lg-3 col-md-3" *ngIf="!isPaymentSelected && listBillToPayPayment.length > 0">
     <img src="src/assets/images/pagar-agora.png"
          class="img-responsive" alt="" style="margin-top: 25px; cursor: pointer" (click)="payBills()">
   </div>
@@ -133,7 +169,7 @@
               <img style="max-height: 50px" src="http://www.inovemoveis.com.br/franquias/2/14830/editor-html/575822.jpg"/>
               <!--<img id="img-caixa" style="max-height: 40px;max-width: 195px;margin-bottom: 2px;" class="img-logo"/>-->
             </td>
-            <td colspan="2" class="bankCode">104-0</td>
+            <td colspan="2" class="bankCode">{{bank?.bankCode}}-0</td>
             <td colspan="5" class="billetNumber">
               <!--Code Bar-->
               <!--Beneficiário
@@ -154,7 +190,7 @@
           </tr>
           <tr class="tr-border-bottom">
             <td colspan=4 style="border-left: 0.15mm solid #000000; border-bottom: 0.15mm solid #000000;" class="billetLeftValue">G2 SOFT COMERCIO LTDA - ME</td>
-            <td colspan=3 class="billetLeftValue">0044 / 377192-0</td>
+            <td colspan=3 class="billetLeftValue">{{bank?.agency}} / 377192-0</td>
             <td colspan=1 style="border-left: none; text-align: right;padding-right: 3px;" class="billetLeftValue">R$</td>
             <td colspan=1 class="billetLeftValue"></td>
             <td colspan=2 style="border-left: 0.15mm solid #000000; border-bottom: 0.15mm solid #000000;" class="billetLeftValue text-right">{{billetShipping?.ourNumber}}</td>
@@ -198,7 +234,7 @@
             <td colspan=2 class="billetRightFieldBorderNone text-right">Autenticação Mecânica</td>
           </tr>
           <tr>
-            <td colspan=11 class="billetLeftValueBorderNone">REFERENTE: {{getCurrentDate('DD/MM/YYYY')}}</td>
+            <td colspan=11 class="billetLeftValueBorderNone">REFERENTE: {{getCurrentDate()}}</td>
           </tr>
           <tr>
             <td colspan=11 class="billetLeftValueBorderNone">COBRANÇA: {{billetShipping?.chargingType}}</td>
@@ -221,7 +257,7 @@
               <!--<img style="max-height: 40px;max-width: 195px;margin-bottom: 2px;" class="img-logo"/>-->
               <img style="max-height: 50px" src="http://www.inovemoveis.com.br/franquias/2/14830/editor-html/575822.jpg"/>
             </td>
-            <td colspan="2" class="bankCode" >104-0</td>
+            <td colspan="2" class="bankCode">{{bank?.bankCode}}-0</td>
             <td colspan="5" class="billetNumber" style="vertical-align: bottom">
               <p id="tdCodeBar" style="margin: 0;">{{codeBar}}</p>
             </td>
@@ -246,7 +282,7 @@
             <td colspan=9 class="billetLeftValue3" style="border-bottom: 0.15mm solid #000000">
               G2 SOFT COMERCIO LTDA - ME
             </td>
-            <td colspan=2 class="billetRightTextValue" style="border-bottom: 0.15mm solid #000000">0044 / 377192-0</td>
+            <td colspan=2 class="billetRightTextValue" style="border-bottom: 0.15mm solid #000000">{{bank?.agency}} / 377192-0</td>
           </tr>
           <tr>
             <td colspan=2 class="billetLeftField2">Data do documento</td>
@@ -356,6 +392,239 @@
         </table>
       </div>
     </div>
+  </div>
+</iframe>
+
+<iframe id="ifrOutput80mm" height="252.6px" width="100%" style="display: none;">
+  <div class="col-lg-12 col-md-12" id="tablebillet80mm" style="max-height: 252.6px">
+    <table class="table" cellSpacing=0 cellPadding=0 style="display: block">
+      <tr>
+        <td colspan=3 class="logo80mm" style="width: 2.9cm">
+          <img style="max-height: 22px" src="http://www.inovemoveis.com.br/franquias/2/14830/editor-html/575822.jpg"/>
+        </td>
+        <td colspan=2 style="width: 2.8cm" class="bankCode80mm">{{bank?.bankCode}}-0</td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=1 style="width: 2.81cm" class="logo80mm">
+          <img style="max-height: 22px" src="http://www.inovemoveis.com.br/franquias/2/14830/editor-html/575822.jpg"/>
+        </td>
+        <td colspan="6" style="width: 15.11cm;" class="billetNumber80mm" id="tdBilletCodeBar80mmValue">
+          {{codeBar}}
+        </td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetRightField80mm">&nbsp;</td>
+        <td colspan=2 style="width: 2.4cm" class="billetRightField80mm">Id Documento</td>
+        <td colspan=2 class="billetRightField80mm" style="border-right: 0.15mm solid #000000;width:  2.6cm">
+          Número Documento
+        </td>
+        <td colspan=1 style="float: left;">&nbsp;</td>
+        <td colspan=6 style="width: 15cm" class="billetRightField80mm">Local de pagamento</td>
+        <td colspan=1 style="border-right: 0.15mm solid #000000;width: 2.5cm" class="billetRightField80mm">Vencimento</td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
+        <td colspan=2 style="width: 2.4cm" class="billetLeftValue80mm">{{billetShipping?.id}}</td>
+        <td colspan=2 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000;width:  2.6cm">
+          {{billetShipping?.id}}
+        </td>
+        <td colspan=1 style="float: left;">&nbsp;</td>
+        <td colspan=6 style="width: 15cm" class="billetLeftValue80mm">
+          PREFERENCIALMENTE NAS CASAS LOTÉRICAS ATÉ O VALOR LIMITE
+        </td>
+        <td colspan=1 style="border-right: 0.15mm solid #000000;width: 2.5cm"
+            class="billetLeftValue80mm">{{getMaturityDate(billetShipping?.maturityDate)}}
+        </td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetRightField80mm">&nbsp;</td>
+        <td colspan=2 style="width: 2.7cm" class="billetRightField80mm">Agência / Código Cedente</td>
+        <td colspan=2 class="billetRightField80mm" style="border-right: 0.15mm solid #000000;width:  2.3cm">
+          Vencimento
+        </td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=6 style="width: 15cm" class="billetRightField80mm">Beneficiário</td>
+        <td colspan=1 style="border-right: 0.15mm solid #000000;width: 2.5cm" class="billetRightField80mm">
+          Agência / Código Cedente
+        </td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
+        <td colspan=2 class="billetLeftValue80mm" style="width: 2.7cm">{{bank?.agency}} / 377192-0</td>
+        <td colspan=2 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000;width:  2.3cm">
+          {{getMaturityDate(billetShipping?.maturityDate)}}
+        </td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=6 class="billetLeftValue80mm" style="width: 15cm">
+          G2 SOFT COMERCIO LTDA - ME&nbsp;&nbsp;CNPJ:14.272.237/0001-36
+        </td>
+        <td colspan=1 style="border-right: 0.15mm solid #000000; width: 2.5cm" class="billetLeftValue80mm">
+          {{bank?.agency}} / 377192-0
+        </td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetRightField80mm">&nbsp;</td>
+        <td colspan=4 class="billetRightField80mm" style="border-right: 0.15mm solid #000000; width: 5.23cm;">
+          Nosso Número
+        </td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=1 style="width: 3cm" class="billetRightField80mm">Data Documento</td>
+        <td colspan=2 style="width: 4cm" class="billetRightField80mm">Número Documento</td>
+        <td colspan=1 style="width: 3cm" class="billetRightField80mm">Espécie Documento</td>
+        <td colspan=1 style="width: 1cm" class="billetRightField80mm">Aceite</td>
+        <td colspan=1 style="width: 3.09cm" class="billetRightField80mm">Data Processamento</td>
+        <td colspan=1 class="billetRightField80mm" style="border-right: 0.15mm solid #000000; width: 2.5cm">
+          Nosso Número
+        </td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
+        <td colspan=4 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000; width: 5.23cm">
+          {{billetShipping?.ourNumber}}
+        </td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=1 style="width: 3cm" class="billetLeftValue80mm">{{getCurrentDate()}}</td>
+        <td colspan=2 style="width: 4cm" class="billetLeftValue80mm">{{billetShipping?.id}}</td>
+        <td colspan=1 style="width: 3cm" class="billetLeftValue80mm">R$</td>
+        <td colspan=1 style="width: 1cm" class="billetLeftValue80mm">&nbsp;</td>
+        <td colspan=1 style="width: 3.09cm" class="billetLeftValue80mm">{{getCurrentDate()}}</td>
+        <td colspan=1 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000; width: 2.5cm">
+          {{billetShipping?.ourNumber}}
+        </td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetRightField80mm">&nbsp;</td>
+        <td colspan=1 class="billetRightField80mm" style="width: 1cm;">Espécie</td>
+        <td colspan=3 class="billetRightField80mm" style="border-right: 0.15mm solid #000000; width: 4cm">
+          Valor Documento
+        </td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=1 style="width: 3cm" class="billetRightField80mm">Uso Banco</td>
+        <td colspan=2 style="width: 4cm;" class="billetRightField80mm">Carteira</td>
+        <td colspan=1 style="width: 1cm;" class="billetRightField80mm">Espécie</td>
+        <td colspan=1 style="width: 3cm;" class="billetRightField80mm">Quantidade</td>
+        <td colspan=1 style="width: 3.09cm;" class="billetRightField80mm">Valor</td>
+        <td colspan=1 class="billetRightField80mm" style="border-right: 0.15mm solid #000000; width: 2.5cm">
+          Valor Documento
+        </td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
+        <td colspan=1 class="billetLeftValue80mm" style="width: 1cm;">R$</td>
+        <td colspan=3 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000; width: 4cm">
+          {{billetShipping?.billValue | number : '1.2-2'}}
+        </td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=1 class="billetLeftValue80mm" style="width: 3cm">&nbsp;</td>
+        <td colspan=2 class="billetLeftValue80mm" style="width: 4cm">{{bank?.walletShippingNumber}}</td>
+        <td colspan=1 class="billetLeftValue80mm" style="width: 1cm">R$</td>
+        <td colspan=1 class="billetLeftValue80mm" style="width: 3cm">&nbsp;</td>
+        <td colspan=1 class="billetLeftValue80mm" style="width: 3.09cm">&nbsp;</td>
+        <td colspan=1 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000; width: 2.5cm">
+          {{billetShipping?.billValue | number : '1.2-2'}}
+        </td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetRightField80mm">&nbsp;</td>
+        <td colspan=4 class="billetRightField80mm" style="width: 5.23cm; border-right: 0.15mm solid #000000;">
+          (-) Desconto/Abatimento
+        </td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=6 class="billetRightField80mm" style="width: 14.98cm">Texto de Responsibilidade do Cedente</td>
+        <td colspan=1 class="billetRightField80mm" style="border-right: 0.15mm solid #000000; width: 2.5cm">
+          (-) Desconto/Abatimento
+        </td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
+        <td colspan=4 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000; width: 5.23cm">&nbsp;</td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=6 class="billetLeftValue80mm" style="width: 14.98cm; border-bottom: none">&nbsp;</td>
+        <td colspan=1 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000; width: 2.5cm">&nbsp;</td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetRightField80mm">&nbsp;</td>
+        <td colspan=4 class="billetRightField80mm" style="width: 5.23cm; border-right: 0.15mm solid #000000;">
+          (-) Outras Deduções
+        </td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=6 class="billetRightField80mm" style="width: 14.98cm">&nbsp;</td>
+        <td colspan=1 class="billetRightField80mm" style="border-right: 0.15mm solid #000000; width: 2.5cm">
+          (-) Outras Deduções
+        </td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
+        <td colspan=4 class="billetLeftValue80mm" style="width: 5.23cm; border-right: 0.15mm solid #000000">&nbsp;</td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=6 class="billetLeftValue80mm" style="width: 14.98cm; border-bottom: none">&nbsp;</td>
+        <td colspan=1 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000; width: 2.5cm">&nbsp;</td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetRightField80mm">&nbsp;</td>
+        <td colspan=4 class="billetRightField80mm" style="width: 5.23cm; border-right: 0.15mm solid #000000">
+          (+) Multa/Mora
+        </td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=6 class="billetRightField80mm" style="width: 14.98cm; border-bottom: none">&nbsp;</td>
+        <td colspan=1 class="billetRightField80mm" style="border-right: 0.15mm solid #000000; width: 2.5cm">
+          (+) Multa/Mora
+        </td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
+        <td colspan=4 class="billetLeftValue80mm" style="width: 5.23cm; border-right: 0.15mm solid #000000">&nbsp;</td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=6 style="width: 14.98cm;" class="billetLeftValue80mm">&nbsp;</td>
+        <td colspan=1 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000; width: 2.5cm">&nbsp;</td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetRightField80mm">&nbsp;</td>
+        <td colspan=4 class="billetRightField80mm" style="width: 5.23cm; border-right: 0.15mm solid #000000">
+          (+) Outros Acréscimos
+        </td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=6 class="billetRightField80mm" style="width: 14.98cm; border-bottom: none">
+          Pagador
+        </td>
+        <td colspan=1 class="billetRightField80mm" style="border-right: 0.15mm solid #000000; width: 2.5cm">
+          (+) Outros Acréscimos
+        </td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
+        <td colspan=4 class="billetLeftValue80mm" style="width: 5.23cm; border-right: 0.15mm solid #000000">&nbsp;</td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=6 style="width: 14.98cm; border-bottom: none;" class="billetLeftValue80mm">
+          {{client?.name}}&nbsp;&nbsp;CNPJ:&nbsp;{{client?.cnpj}}&nbsp;
+          Endereço&nbsp;{{client?.address}}&nbsp;{{client?.addressNumber}}&nbsp;
+          CEP:{{client?.zipCode}}&nbsp;{{client?.city}}&nbsp;-&nbsp;{{client?.uf}}
+        </td>
+        <td colspan=1 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000; width: 2.5cm">&nbsp;</td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetRightField80mm">&nbsp;</td>
+        <td colspan=4 class="billetRightField80mm" style="width: 5.23cm; border-right: 0.15mm solid #000000">
+          (=) Valor Cobrado
+        </td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=6 class="billetRightField80mm" style="width: 14.98cm; border-bottom: none">&nbsp;</td>
+        <td colspan=1 class="billetRightField80mm" style="border-right: 0.15mm solid #000000; width: 2.5cm">
+          (=) Valor Cobrado
+        </td>
+      </tr>
+      <tr class="trBillet80mm">
+        <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
+        <td colspan=4 class="billetLeftValue80mm" style="width: 5.23cm; border-right: 0.15mm solid #000000">&nbsp;</td>
+        <td colspan=1 style="float: left">&nbsp;</td>
+        <td colspan=6 style="width: 14.98cm; border-bottom: 0.15mm solid #000000" class="billetRightField80mm">
+          Sacador / Avalista
+        </td>
+        <td colspan=1 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000; width: 2.5cm">&nbsp;</td>
+      </tr>
+      <tr style="display: flex; max-height: 30px">
+        <td id="tdBilletBarCode80mm"></td>
+      </tr>
+    </table>
   </div>
 </iframe>
 

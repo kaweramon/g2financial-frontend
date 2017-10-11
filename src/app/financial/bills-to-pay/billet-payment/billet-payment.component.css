@@ -68,3 +68,33 @@
 .tr-border-bottom {
   border-bottom: 0.15mm solid #000000;
 }
+.logo80mm{
+  text-align: left; height: 10mm; border-right: 0.15mm solid #000000;
+  padding-left : 1mm; padding-right: 1mm;
+  border-bottom: 0.15mm solid #000000; display: table-caption;float: left;
+}
+.billetRightField80mm {
+  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; padding-right: 1mm;
+  border-left: 0.15mm solid #000000; display: table-caption;float: left;
+}
+.bankCode80mm {
+  font-size: 5mm; font-family: arial, verdana; font-weight : bold;
+  font-style: italic; text-align: center; vertical-align: bottom;
+  border-right: none; border-bottom: 0.15mm solid #000000; padding-bottom: 1mm;
+}
+.billetNumber80mm {
+  font-size: 3.2mm; font-family: arial, verdana; font-weight : bold;
+  text-align: center; vertical-align: bottom; padding-bottom : 1mm;
+  border-bottom: 0.15mm solid #000000; display: block;
+}
+.billetLeftValue80mm {
+  font-size: 0.20cm; font-family: arial, verdana; padding : 0px 0px 6px 1px !important;
+  text-align: center; font-weight: bold; border-left: 0.15mm solid #000000;
+  border-bottom: 0.15mm solid #000000; display: table-caption;float: left;
+}
+.trBillet80mm {
+  display: table-caption; width: 920px; max-height: 8px !important;
+}
+#test > tr {
+  display: block;
+}

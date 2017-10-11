@@ -49,32 +49,32 @@ var DebitCardPaymentComponent = (function () {
                     DebitCard: _this.payment.DebitCard
                 }
             };
-            _this.service.paymentDebitCard(debitPayment).subscribe(function (cieloPaymentReturn) {
-                console.log(cieloPaymentReturn);
-                // if (cieloPaymentReturn.Payment.ReturnCode === "4") {
-                _this.saveListBillToPayPayment();
-                _this.saveListBillToPayAmountsPaid();
-                $('#btnDoPaymentDebitCard').prop("disabled", false);
-                var toastOptions = {
-                    title: "Pagamento Realizado",
-                    showClose: true,
-                    timeout: 4000
+            console.log(JSON.stringify(debitPayment));
+            /*this.service.paymentDebitCard(debitPayment).subscribe(cieloPaymentReturn => {
+              console.log(cieloPaymentReturn);
+              // if (cieloPaymentReturn.Payment.ReturnCode === "4") {
+                this.saveListBillToPayPayment();
+                this.saveListBillToPayAmountsPaid();
+              $('#btnDoPaymentDebitCard').prop("disabled",false);
+                let toastOptions: ToastOptions = {
+                  title: "Pagamento Realizado",
+                  showClose: true,
+                  timeout: 4000
                 };
-                _this.toastyService.success(toastOptions);
-                _this.stopSlimLoadingBar();
-                // }
-            }, function (error) {
-                $('#btnDoPaymentDebitCard').prop("disabled", false);
-                _this.stopSlimLoadingBar();
-                if (error.json().length > 0) {
-                    error.json().forEach(function (error) {
-                        _this.showMsgError(error.Code, error.Message);
-                    });
-                }
-                else if (error.json() !== undefined) {
-                    _this.showMsgError(error.json().Code, error.json().Message);
-                }
-            });
+                this.toastyService.success(toastOptions);
+                this.stopSlimLoadingBar();
+              // }
+            }, error => {
+              $('#btnDoPaymentDebitCard').prop("disabled",false);
+              this.stopSlimLoadingBar();
+              if (error.json().length > 0) {
+                error.json().forEach(error => {
+                  this.showMsgError(error.Code, error.Message);
+                });
+              } else if (error.json() !== undefined) {
+                this.showMsgError(error.json().Code, error.json().Message);
+              }
+            })*/
         });
     };
     DebitCardPaymentComponent.prototype.saveListBillToPayPayment = function () {

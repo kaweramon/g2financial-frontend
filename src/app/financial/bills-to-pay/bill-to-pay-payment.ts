@@ -20,6 +20,7 @@ export class BillToPayPayment {
   public isChecked: boolean;
   public subTotal: number;
   public daysInArrears: number;
+  public bankId: number;
   public dateStatus: string;
   public billetShipping: BilletShipping;
 

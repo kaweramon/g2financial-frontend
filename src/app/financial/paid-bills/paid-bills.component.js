@@ -10,18 +10,15 @@ var core_1 = require("@angular/core");
 var moment = require("moment");
 var PaidBillsComponent = (function () {
     function PaidBillsComponent(route, service) {
+        var _this = this;
         this.route = route;
         this.service = service;
         this.listPaidBills = [];
         this.listBillToPayPayment = [];
-    }
-    PaidBillsComponent.prototype.ngOnInit = function () {
-        var _this = this;
         this.service.listByClientId(this.route.snapshot.params['clientId'], "SIM").subscribe(function (result) {
-            _this.listPaidBills = result;
-            // this.getListBillToPayPayment();
+            _this.listBillToPayPayment = result;
         });
-    };
+    }
     PaidBillsComponent.prototype.getListBillToPayPayment = function () {
         var _this = this;
         this.listPaidBills.forEach(function (billToPay) {

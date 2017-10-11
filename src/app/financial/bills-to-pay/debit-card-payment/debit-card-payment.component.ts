@@ -61,7 +61,8 @@ export class DebitCardPaymentComponent {
           DebitCard: this.payment.DebitCard
         }
       };
-      this.service.paymentDebitCard(debitPayment).subscribe(cieloPaymentReturn => {
+      console.log(JSON.stringify(debitPayment));
+      /*this.service.paymentDebitCard(debitPayment).subscribe(cieloPaymentReturn => {
         console.log(cieloPaymentReturn);
         // if (cieloPaymentReturn.Payment.ReturnCode === "4") {
           this.saveListBillToPayPayment();
@@ -85,7 +86,7 @@ export class DebitCardPaymentComponent {
         } else if (error.json() !== undefined) {
           this.showMsgError(error.json().Code, error.json().Message);
         }
-      })
+      })*/
     });
 
   }
