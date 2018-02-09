@@ -4,4 +4,6 @@ export class TypeInterestCharge {
   public percentInterest: number;
   public percentLiveDays: number;
   public percentCharges: number;
+  public interestValue: number;
+  public liveDaysValue: number;
 }

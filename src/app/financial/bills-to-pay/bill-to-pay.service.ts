@@ -26,6 +26,10 @@ export class BillToPayService {
   public paymentCreditCard(payment: any): Observable<any> {
     this.params = new URLSearchParams();
     this.setMerchantIdAndKey();
+    this.headers.set("Access-Control-Allow-Origin", "*");
+    this.headers.set("Access-Control-Allow-Headers", "content-type, withcredentials, Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
+    this.headers.set("Access-Control-Allow-Credentials", "true");
+    this.headers.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS, POST, PUT");
     return this.http.post(this.urlCieloProduction, payment, {headers: this.headers, search: this.params})
       .map(res => res.json());
   }

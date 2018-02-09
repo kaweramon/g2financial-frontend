@@ -1,48 +1,21 @@
 <div class="modal-dialog modal-lg">
   <div class="modal-content">
     <div class="modal-header">
-      <h4 class="modal-title pull-left">Atualizar ou Imprimir Boleto</h4>
+      <h4 class="modal-title pull-left">Imprimir Boleto</h4>
       <button type="button" class="close pull-right" (click)="modalLateBill.hide();" aria-label="Close">
         <span aria-hidden="true">&times;</span>
       </button>
     </div>
     <div class="modal-body">
-      <!--<div class="row">
-        <div class="col-lg-12 col-md-12">
-          Código de Barras: {{codeBar}}
-        </div>
-      </div>-->
-      <div class="row">
-        <div class="col-lg-12 col-md-12">
-          <label class="control-label">Código de Barras:</label>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-lg-2 col-md-2">
-          <input type="text" class="form-control" [(ngModel)]="codeBarFirstGroup" name="codeBarFirstGroup">
-        </div>
-        <div class="col-lg-2 col-md-2">
-          <input type="text" class="form-control" [(ngModel)]="codeBarSecondGroup" name="codeBarSecondGroup">
-        </div>
-        <div class="col-lg-2 col-md-2">
-          <input type="text" class="form-control" [(ngModel)]="codeBarThirdGroup" name="codeBarThirdGroup">
-        </div>
-        <div class="col-lg-1 col-md-1">
-          <input type="text" class="form-control" [(ngModel)]="verifyDigit" name="verifyDigit">
-        </div>
-        <div class="col-lg-4 col-md-4">
-          <input type="text" class="form-control" [(ngModel)]="codeBarFourGroup" name="codeBarFourGroup">
-        </div>
-      </div>
       <div class="row" style="margin-top: 15px">
         <div class="col-lg-12 col-md-12 pull-right">
           <button class="btn btn-primary" (click)="printBillet()">Imprimir</button>
           <button class="btn btn-primary" (click)="printBillet80mm()">Imprimir 80mm</button>
-          <button class="btn btn-primary">
+          <!--<button class="btn btn-primary">
             <a style="color: white" href="https://bloquetoexpresso.caixa.gov.br/bloquetoexpresso/index.jsp" target="_blank">
               Atualizar Boleto
             </a>
-          </button>
+          </button>-->
         </div>
       </div>
     </div>

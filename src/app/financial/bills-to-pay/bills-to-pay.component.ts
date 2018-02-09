@@ -70,9 +70,9 @@ export class BillsToPayComponent {
     this.clientService.view(this.route.snapshot.params["clientId"]).subscribe(client => {
       this.client = client;
     });
-    this.typeInterestService.getByType('MENSALIDADE').subscribe(result => {
+    /*this.typeInterestService.getByType('MENSALIDADE').subscribe(result => {
       this.typeInterestCharge = result;
-    });
+    });*/
     this.slimLoadingBarService.start();
     this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(result => {
       this.listBillToPayPayment = result;
@@ -115,7 +115,7 @@ export class BillsToPayComponent {
       billToPayPayment.isChecked = true;
       billToPayPayment.dateStatus = 'IS_SAME';
     }
-    if (moment(billToPayPayment.maturity).isBefore(moment().subtract(1, 'd'))) {
+    if (moment(billToPayPayment.maturity).add(1, 'd').isBefore(moment().format('YYYY-MM-DD'))) {
       billToPayPayment.isChecked = true;
       billToPayPayment.dateStatus = 'IS_BEFORE';
     }
@@ -133,7 +133,7 @@ export class BillsToPayComponent {
       'days').toString(), 10);
     billToPayment.daysInArrears = daysInArrears;
     let chargesInDayMonths: Array<number> = [];
-    if (daysInArrears !== undefined && daysInArrears > 0) {
+    if (daysInArrears !== undefined && daysInArrears > 0 && this.typeInterestCharge) {
       billToPayment.amountInterest = (billToPayment.amount / 100) * this.typeInterestCharge.percentInterest;
       billToPayment.amountCharges = 0.0;
       for (let i = 0; i < daysInArrears; i++) {
@@ -317,7 +317,7 @@ export class BillsToPayComponent {
 
   // Cálculo do fator de vencimento Posição: 06-09 - CAIXA
   private getMaturityFactor(date: any): any {
-    return moment(date).diff(moment("1997-10-07"), 'days');
+    return moment(date).add(1, 'd').diff(moment("1997-10-07"), 'days');
   }
 
   // Cálculo do digito verificador do código do beneficiário - CAIXA
@@ -439,7 +439,12 @@ export class BillsToPayComponent {
   }
 
   public getMaturityDate(date): string {
-    return moment(date).add(1, 'd').format('DD/MM/YYYY');
+    // return moment(date).add(1, 'd').format('DD/MM/YYYY');
+    return moment(date).format('DD/MM/YYYY');
+  }
+
+  public getMaturityInterestDate(date): string {
+    return moment(date).add(2, 'd').format('DD/MM/YYYY');
   }
 
   private print(): void {
@@ -577,6 +582,10 @@ export class BillsToPayComponent {
   }
 
   onNotify(msg:any): void {
+    this.typeInterestService.getByType(this.billetShipping.chargingType).subscribe(result => {
+      this.typeInterestCharge = result;
+    }, errorReturned => {
+    });
     if (msg.message === 'printBillet') {
       document.getElementById('ifrOutput').style.display = 'block';
       this.generateBarCodeAndPrint();
@@ -589,7 +598,7 @@ export class BillsToPayComponent {
   }
 
   public isBilletOld(maturityDate: Date): Boolean {
-    return moment(maturityDate) < moment([2017, 9, 1]);
+    return moment(maturityDate) < moment([2017, 8, 30]);
   }
 
 }
