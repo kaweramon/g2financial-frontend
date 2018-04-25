@@ -1,0 +1,11 @@
+#div-payment-receipt {
+  float: none;
+  margin: 0 auto;
+  background-color: #EBFAFF
+}
+
+p {
+  font-size: 11px;
+  margin: 0;
+  max-width: 220px;
+}

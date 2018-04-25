@@ -1,0 +1,34 @@
+<div class="container">
+  <ng2-toasty></ng2-toasty>
+  <div class="row" style="display: flex;align-items: center">
+    <div class="col-lg-4 col-md-4 img-responsive">
+      <img src="src/assets/images/logo_g2.jpeg" alt="G2 Logo"><br>
+      <small class="text-center" style="margin-left: 65px;">(83) 3292-3886</small>
+    </div>
+    <div class="col-lg-6 col-md-6">
+      <h3 class="panel title">{{client.name}}</h3>
+      <h4>{{client.fantasyName}}</h4>
+      <h4>{{client.cnpj}}</h4>
+    </div>
+  </div>
+  <div class="row" style="margin-top: 20px">
+    <div class="col-lg-10 col-md-10" style="padding: 0px;">
+      <button class="btn btn-primary pull-right" (click)="goToSearchClient()">Nova Consulta</button>
+    </div>
+  </div>
+  <div class="row" style="margin-top: 20px">
+    <div class="col-lg-10 col-md-10" style="padding: 0px">
+      <tabset #financialTabs>
+        <tab heading="Contas a pagar">
+          <app-bills-to-pay></app-bills-to-pay>
+        </tab>
+        <tab heading="Contas pagas">
+          <app-paid-bills></app-paid-bills>
+        </tab>
+        <tab heading="Venda Avulsa">
+          <app-for-sale></app-for-sale>
+        </tab>
+      </tabset>
+    </div>
+  </div>
+</div>

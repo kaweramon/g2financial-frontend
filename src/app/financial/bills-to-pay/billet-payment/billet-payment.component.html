@@ -1,0 +1,252 @@
+<ng2-toasty></ng2-toasty>
+<iframe id="ifrOutput" height="700px" width="100%">
+  <div class="col-lg-10 col-md-10" style="padding: 0px; margin-top: 15px">
+    <div class="row">
+      <div class="col-lg-12 col-md-12" id="tablebillet">
+        <table cellSpacing=0 cellPadding=0 border=0>
+          <tr>
+            <td style='width: 1cm'></td>
+            <td style='width: 1cm'></td>
+            <td style='width: 1.9cm'></td>
+
+            <td style='width: 0.8cm'></td>
+            <td style='width: 1cm'></td>
+            <td style='width: 1cm'></td>
+            <td style='width: 1.0cm'></td>
+
+            <td style='width: 2.3cm'></td>
+            <td style='width: 2.3cm'></td>
+
+            <td style='width: 1.9cm'></td>
+
+            <td style='width: 1.9cm'></td>
+          </tr>
+          <tr>
+            <td colspan="11" style="border-top: 0.3mm dashed #000000; font-size: 1mm">&nbsp;</td>
+          </tr>
+          <tr>
+            <td colspan=4 class="logo">
+              <img style="max-height: 50px" src="http://www.inovemoveis.com.br/franquias/2/14830/editor-html/575822.jpg"/>
+            </td>
+            <td colspan="2" class="bankCode">104-0</td>
+            <td colspan="5" class="billetNumber">
+              {{codeBar}}
+            </td>
+          </tr>
+          <tr>
+            <td colspan=4 class="billetRightField">Cedente</td>
+            <td colspan=3 class="billetRightField">
+              Agência/Código do Cedente
+            </td>
+            <td colspan=1 style="border-left: none;text-align: right; padding-right: 1mm;"
+                class="billetRightField">Espécie</td>
+            <td colspan=1 class="billetRightField">Quantidade</td>
+            <td colspan=2 class="billetRightField">Nosso Número</td>
+          </tr>
+          <tr class="tr-border-bottom">
+            <td colspan=4 style="border-left: 0.15mm solid #000000; border-bottom: 0.15mm solid #000000;" class="billetLeftValue">G2 SOFT COMERCIO LTDA - ME</td>
+            <td colspan=3 class="billetLeftValue">0044 / 377192-0</td>
+            <td colspan=1 style="border-left: none; text-align: right;padding-right: 3px;" class="billetLeftValue">R$</td>
+            <td colspan=1 class="billetLeftValue"></td>
+            <td colspan=2 style="border-left: 0.15mm solid #000000; border-bottom: 0.15mm solid #000000;" class="billetLeftValue text-right">{{billetShipping?.ourNumber}}</td>
+          </tr>
+          <tr>
+            <td colspan=4 class="billetRightField">Número do Documento</td>
+            <td colspan=4 class="billetRightField">CPF/CNPJ</td>
+            <td colspan=1 class="billetRightField"
+                style="text-align: right; border-left: none;padding-right: 1mm;">Vencimento</td>
+            <td colspan=2 class="billetRightField">Valor documento</td>
+          </tr>
+          <tr>
+            <td colspan=4 class="billetLeftValue"></td>
+            <td colspan=4 class="billetLeftValue">14.272.237/001-36</td>
+            <td colspan=1 class="billetLeftValue"
+                style="text-align: right; border-left: none;padding-right: 1mm;">{{getMaturityDate(billetShipping?.maturityDate)}}</td>
+            <td colspan=2 class="billetLeftValue text-right">{{billetShipping?.billValue | currency:'BRL':true: '1.2-2'}}</td>
+          </tr>
+          <tr>
+            <td colspan=3 class="billetRightField">(-) Desconto / Abatimentos</td>
+            <td colspan=2 class="billetRightField">(-) Outras deduções</td>
+            <td colspan=2 class="billetRightField">(+) Mora / Multa</td>
+            <td colspan=2 class="billetRightField">(+) Outros acréscimos</td>
+            <td colspan=2 class="billetRightField">(=) Valor Cobrado</td>
+          </tr>
+          <tr>
+            <td colspan=3 class="billetLeftValue">&nbsp;</td>
+            <td colspan=2 class="billetLeftValue">&nbsp;</td>
+            <td colspan=2 class="billetLeftValue">&nbsp;</td>
+            <td colspan=2 class="billetLeftValue">&nbsp;</td>
+            <td colspan=2 class="billetLeftValue">&nbsp;</td>
+          </tr>
+          <tr>
+            <td colspan=11 class="billetRightField">Sacado</td>
+          </tr>
+          <tr>
+            <td colspan=11 class="billetLeftValue">{{client?.name}}</td>
+          </tr>
+          <tr>
+            <td colspan=9 class="billetRightFieldBorderNone">Demonstrativo</td>
+            <td colspan=2 class="billetRightFieldBorderNone text-right">Autenticação Mecânica</td>
+          </tr>
+          <tr>
+            <td colspan=11 class="billetLeftValueBorderNone">REFERENTE: {{getCurrentDate()}}</td>
+          </tr>
+          <tr>
+            <td colspan=11 class="billetLeftValueBorderNone">COBRANÇA: {{billetShipping?.chargingType}}</td>
+          </tr>
+
+
+          <tr>
+            <td colspan=11 height=40 valign=top>&nbsp;</td>
+          </tr>
+          <tr>
+            <td colspan=11 style="border-left: none; text-align: right" class="billetLeftField2">
+              Corte na linha pontilhada
+            </td>
+          </tr>
+          <tr>
+            <td colspan=11 style="border-top: 0.3mm dashed #000000; font-size: 1mm">&nbsp;</td>
+          </tr>
+          <tr>
+            <td colspan=4 class="logo">
+              <!--<img style="max-height: 40px;max-width: 195px;margin-bottom: 2px;" class="img-logo"/>-->
+              <img style="max-height: 50px" src="http://www.inovemoveis.com.br/franquias/2/14830/editor-html/575822.jpg"/>
+            </td>
+            <td colspan="2" class="bankCode" >104-0</td>
+            <td colspan="5" class="billetNumber" style="vertical-align: bottom">
+              <p id="tdCodeBar" style="margin: 0;">{{codeBar}}</p>
+            </td>
+          </tr>
+          <tr>
+            <td colspan=9 style="border-right: none; border-bottom: none" class="billetLeftField2">Local de Pagamento</td>
+            <td colspan=2 class="billetRightField" style="border-bottom: none">Vencimento</td>
+          </tr>
+          <tr>
+            <td colspan=9 class="billetLeftValue3 text-center">
+              PREFERENCIALMENTE NAS CASAS LOTÉRICAS ATÉ O VALOR LIMITE
+            </td>
+            <td colspan=2 style="border-bottom: none" class="billetRightTextValue">{{getMaturityDate(billetShipping?.maturityDate)}}</td>
+          </tr>
+          <tr>
+            <td colspan=9 style="border-right: none; border-bottom: none" class="billetLeftField2">
+              Cedente
+            </td>
+            <td colspan=2 class="billetRightField" style="border-bottom: none">Agência/Código cedente</td>
+          </tr>
+          <tr>
+            <td colspan=9 class="billetLeftValue3" style="border-bottom: 0.15mm solid #000000">
+              G2 SOFT COMERCIO LTDA - ME
+            </td>
+            <td colspan=2 class="billetRightTextValue" style="border-bottom: 0.15mm solid #000000">0044 / 377192-0</td>
+          </tr>
+          <tr>
+            <td colspan=2 class="billetLeftField2">Data do documento</td>
+            <td colspan=3 class="billetLeftField2">Nº documento</td>
+            <td colspan=2 class="billetLeftField2">Espécie doc.</td>
+            <td colspan=1 class="billetLeftField2">Aceite</td>
+            <td colspan=1 class="billetLeftField2">Data processamento</td>
+            <td colspan=2 class="billetLeftField2">Nosso Número</td>
+          </tr>
+          <tr>
+            <td colspan=2 style="border-bottom: none" class="billetLeftValue2">{{getCurrentDate()}}</td>
+            <td colspan=3 class="billetLeftTextValue2">&nbsp;</td>
+            <td colspan=2 class="billetLeftTextValue2">DM</td>
+            <td colspan=1 class="billetLeftTextValue2">NÃO</td>
+            <td colspan=1 class="billetLeftTextValue2">{{getCurrentDate()}}</td>
+            <td colspan=2 class="billetLeftTextValue2 text-right">{{billetShipping?.ourNumber}}</td>
+          </tr>
+          <tr>
+            <td colspan=2 class="billetLeftField2">Uso do banco</td>
+            <td colspan=2 class="billetLeftField2">Carteira</td>
+            <td colspan=1 class="billetLeftField2" style="border-left: none">Espécie</td>
+            <td colspan=3 class="billetLeftField2" style="border-left: none">Quantidade</td>
+            <td colspan=1 class="billetLeftField2">Valor Documento</td>
+            <td colspan=2 class="billetLeftField2">(=) Valor documento</td>
+          </tr>
+          <tr>
+            <td colspan=2 style="border-bottom: 0.15mm solid #000000" class="billetLeftValue2">&nbsp;</td>
+            <td colspan=2 style="border-bottom: 0.15mm solid #000000" class="billetLeftTextValue2">SR</td>
+            <td colspan=1  class="billetLeftTextValue2" style="border-bottom: 0.15mm solid #000000;border-left: none">R$</td>
+            <td colspan=3 class="billetLeftTextValue2" style="border-bottom: 0.15mm solid #000000;border-left: none">&nbsp;</td>
+            <td colspan=1 style="border-bottom: 0.15mm solid #000000" class="billetLeftTextValue2">&nbsp;</td>
+            <td colspan=2 style="border-bottom: 0.15mm solid #000000" class="billetLeftTextValue2 text-right">{{billetShipping?.billValue | number : '1.2-2'}}</td>
+          </tr>
+          <tr>
+            <td colspan=9 class="billetLeftField2">Instruções (Texto de responsibilidade do cedente)</td>
+            <td colspan=2 class="billetLeftField2">(-) Desconto / Abatimentos</td>
+          </tr>
+          <tr>
+            <td colspan=9  class="billetLeftValue3">&nbsp;</td>
+            <td colspan=2 class="billetLeftValue3">&nbsp;</td>
+          </tr>
+          <tr>
+            <td colspan=9 class="billetLeftValue3">NÃO RECEBER APÓS O VENCIMENTO</td>
+            <td colspan=2 class="billetLeftField2">(-) Outras deduções</td>
+          </tr>
+          <tr>
+            <td colspan=9 class="billetLeftField2">&nbsp;</td>
+            <td colspan=2 style="border-bottom: 0.15mm solid #000000;" class="billetLeftField2">&nbsp;</td>
+          </tr>
+          <tr>
+            <td colspan=9 class="billetLeftField2">&nbsp;</td>
+            <td colspan=2 class="billetLeftField2">(+) Mora / Multa</td>
+          </tr>
+          <tr>
+            <td colspan=9 class="billetLeftField2">&nbsp;</td>
+            <td colspan=2 class="billetLeftField2">&nbsp;</td>
+          </tr>
+          <tr>
+            <td colspan=9 class="billetLeftField2">&nbsp;</td>
+            <td colspan=2 class="billetLeftField2">(+) Outros acréscimos</td>
+          </tr>
+          <tr>
+            <td colspan=9 class="billetLeftField2">&nbsp;</td>
+            <td colspan=2 class="billetLeftField2" style="border-bottom: 0.15mm solid #000000;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td colspan=9 class="billetLeftField2">&nbsp;</td>
+            <td colspan=2 class="billetLeftField2">(=) Valor cobrado</td>
+          </tr>
+          <tr>
+            <td style="border-bottom: 0.15mm solid #000000;" colspan=9 class="billetLeftField2">&nbsp;</td>
+            <td style="border-bottom: 0.15mm solid #000000;" colspan=2 class="billetLeftField2">&nbsp;</td>
+          </tr>
+          <tr>
+            <td colspan=9 class="billetLeftField2">Sacado</td>
+            <td colspan=2 class="billetLeftField2"></td>
+          </tr>
+          <tr>
+            <td colspan=9 class="billetLeftValue3">{{client?.name}}</td>
+            <td colspan=2 class="billetLeftField2"></td>
+          </tr>
+          <tr>
+            <td colspan=9 class="billetLeftValue3">{{client?.address}}, {{client?.addressNumber}}</td>
+            <td colspan=2 class="billetLeftField2"></td>
+          </tr>
+          <tr>
+            <td style="border-bottom: 0.15mm solid #000000;" colspan=9 class="billetLeftValue3">
+              {{client?.city}} - {{client?.uf}}&nbsp;CEP:&nbsp;{{client?.zipCode}}
+            </td>
+            <td style="border-bottom: 0.15mm solid #000000;" colspan=2 class="billetLeftField2">Cód. baixa</td>
+          </tr>
+          <tr>
+            <td colspan=8 style="border-left: none" class="billetLeftField2">Sacado/Avalista</td>
+            <td colspan=3 style="border-left: none" class="billetLeftField2 text-right">Autenticação mecânica - <strong>Ficha de Compensação</strong></td>
+          </tr>
+          <tr>
+            <td colspan="11" id="boleto"></td>
+          </tr>
+          <tr>
+            <td colspan=11 style="border-left: none; text-align: right" class="billetLeftField2">
+              Corte na linha pontilhada
+            </td>
+          </tr>
+          <tr>
+            <td colspan="11" style="border-top: 0.3mm dashed #000000; font-size: 1mm">&nbsp;</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</iframe>
+

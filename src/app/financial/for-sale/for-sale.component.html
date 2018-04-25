@@ -1,0 +1,342 @@
+<form class="form" name="formForSale" [formGroup]="formForSale">
+  <div class="row">
+    <div class="col-lg-6 col-md-6 form-group" [ngClass]="{'has-error' :
+          formForSale.controls.paymentDescription.errors && (formForSale.controls.paymentDescription.dirty ||
+          formForSale.controls.paymentDescription.touched)}">
+      <label for="inputForSaleDiscrimination" class="control-label">Discriminação</label>
+      <input type="text" class="form-control" id="inputForSaleDiscrimination" name="paymentDescription"
+             [(ngModel)]="paymentDescription" formControlName="paymentDescription">
+      <span class="control-label" *ngIf="formForSale.controls.paymentDescription.errors
+              && formForSale.controls.paymentDescription.errors.required
+              && (formForSale.controls.paymentDescription.dirty || formForSale.controls.paymentDescription.touched)">
+        Discriminação é obrigatória
+      </span>
+      <span class="control-label" *ngIf="formForSale.controls.paymentDescription.errors
+              && formForSale.controls.paymentDescription.errors.minlength
+              && (formForSale.controls.paymentDescription.dirty || formForSale.controls.paymentDescription.touched)">
+        Discriminação deve ter no mínimo 3 caracteres
+      </span>
+    </div>
+    <div class="col-lg-4 col-md-4 form-group" [ngClass]="{'has-error' :
+          (formForSale.controls.amountString.errors || (amountString !== undefined && amountString === 0))
+          && (formForSale.controls.amountString.dirty ||
+          formForSale.controls.amountString.touched)}">
+      <label for="inputForSaleValue" class="control-label">Valor</label>
+      <input type="text" class="form-control" id="inputForSaleValue" [(ngModel)]="amountString"
+             formControlName="amountString" name="amountString"
+             currencyMask [options]="{ prefix: 'R$ ', thousands: '.', decimal: ',' }">
+      <span class="control-label" *ngIf="(formForSale.controls.amountString.errors
+              && formForSale.controls.amountString.errors.required
+              && (formForSale.controls.amountString.dirty || formForSale.controls.amountString.touched) ||
+              (amountString !== undefined && amountString === 0))">
+        Valor é obrigatório
+      </span>
+
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-lg-4 col-md-4 form-group">
+      <label class="control-label" for="paymentMethod">Forma de Pagamento</label>
+      <select name="paymentMethod" id="paymentMethod" class="form-control" [(ngModel)]="paymentMethod"
+              formControlName="paymentMethod">
+        <option value="CREDIT">Cartão de Crédito</option>
+        <!--<option value="DEBIT">Cartão de Débito</option>-->
+      </select>
+    </div>
+  </div>
+  <div class="row" *ngIf="paymentMethod === 'CREDIT'" style="margin: 0;">
+    <form name="formForSaleCreditCard" [formGroup]="formForSaleCreditCard">
+      <div class="row">
+        <div class="col-lg-4 col-md-4 form-group" [ngClass]="{'has-error' :
+          formForSaleCreditCard.controls.creditCardBrand.errors && (formForSaleCreditCard.controls.creditCardBrand.dirty ||
+          formForSaleCreditCard.controls.creditCardBrand.touched)}">
+          <label for="inputCreditCardBrand" class="control-label">Bandeira</label>
+          <select name="creditCardBrand" id="inputCreditCardBrand" class="form-control"
+                  formControlName="creditCardBrand"
+                  [(ngModel)]="payment.CreditCard.Brand">
+            <option value="Visa">Visa</option>
+            <option value="Master">MasterCard</option>
+            <option value="Elo">Elo</option>
+            <option value="Diners">Diners Club</option>
+            <option value="Aura">Aura</option>
+            <option value="JCB">JCB</option>
+            <option value="Discover">Discover</option>
+          </select>
+          <span class="control-label" *ngIf="formForSaleCreditCard.controls.creditCardBrand.errors
+              && formForSaleCreditCard.controls.creditCardBrand.errors.required
+              && (formForSaleCreditCard.controls.creditCardBrand.dirty ||
+              formForSaleCreditCard.controls.creditCardBrand.touched)">
+            Bandeira é obrigatória
+          </span>
+        </div>
+        <div class="col-lg-4 col-md-4 form-group" [ngClass]="{'has-error' :
+          formForSaleCreditCard.controls.creditCardNumber.errors &&
+          (formForSaleCreditCard.controls.creditCardNumber.dirty ||
+          formForSaleCreditCard.controls.creditCardNumber.touched)}">
+          <label for="inputCreditCardNumber" class="control-label">Número</label>
+          <input type="text" name="creditCardNumber" id="inputCreditCardNumber" class="form-control"
+                 formControlName="creditCardNumber"
+                 [(ngModel)]="payment.CreditCard.CardNumber">
+          <span class="control-label" *ngIf="formForSaleCreditCard.controls.creditCardNumber.errors
+              && formForSaleCreditCard.controls.creditCardNumber.errors.required
+              && (formForSaleCreditCard.controls.creditCardNumber.dirty ||
+              formForSaleCreditCard.controls.creditCardNumber.touched)">
+            Número é obrigatório
+          </span>
+          <span class="control-label" *ngIf="formForSaleCreditCard.controls.creditCardNumber.errors
+              && formForSaleCreditCard.controls.creditCardNumber.errors.minlength
+              && (formForSaleCreditCard.controls.creditCardNumber.dirty ||
+              formForSaleCreditCard.controls.creditCardNumber.touched)">
+            Número do cartão deve ter no mínimo 16 caracteres
+          </span>
+        </div>
+        <div class="col-lg-2 col-md-2 form-group" [ngClass]="{'has-error' :
+          formForSaleCreditCard.controls.creditCardExpirationDate.errors &&
+          (formForSaleCreditCard.controls.creditCardExpirationDate.dirty ||
+          formForSaleCreditCard.controls.creditCardExpirationDate.touched)}">
+          <label for="inputCreditCardValidDate" class="control-label">Validade</label>
+          <input type="text" id="inputCreditCardValidDate" name="creditCardExpirationDate" class="form-control"
+                 formControlName="creditCardExpirationDate"
+                 [textMask]="{mask: maskValidDate}" [(ngModel)]="payment.CreditCard.ExpirationDate">
+          <span class="control-label" *ngIf="formForSaleCreditCard.controls.creditCardExpirationDate.errors
+              && formForSaleCreditCard.controls.creditCardExpirationDate.errors.required
+              && (formForSaleCreditCard.controls.creditCardExpirationDate.dirty ||
+              formForSaleCreditCard.controls.creditCardExpirationDate.touched)">
+            Data é obrigatória
+          </span>
+        </div>
+        <div class="col-lg-2 col-md-2 form-group" [ngClass]="{'has-error' :
+          formForSaleCreditCard.controls.creditCardSecurityCode.errors &&
+          (formForSaleCreditCard.controls.creditCardSecurityCode.dirty ||
+          formForSaleCreditCard.controls.creditCardSecurityCode.touched)}">
+          <label for="inputCreditCardSecurityCode" class="control-label">Cód. Segurança</label>
+          <input type="text" id="inputCreditCardSecurityCode" class="form-control" [textMask]="{mask: maskSecurityCode}"
+                 [(ngModel)]="payment.CreditCard.SecurityCode" name="creditCardSecurityCode"
+                 formControlName="creditCardSecurityCode"
+                 style="background-color: rgba(255, 255, 0, 0.34)">
+          <span class="control-label" *ngIf="formForSaleCreditCard.controls.creditCardSecurityCode.errors
+              && formForSaleCreditCard.controls.creditCardSecurityCode.errors.required
+              && (formForSaleCreditCard.controls.creditCardSecurityCode.dirty ||
+              formForSaleCreditCard.controls.creditCardSecurityCode.touched)">
+            Código é obrigatório
+          </span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-4 col-md-4 form-group" [ngClass]="{'has-error' :
+          formForSaleCreditCard.controls.creditCardHolder.errors &&
+          (formForSaleCreditCard.controls.creditCardHolder.dirty ||
+          formForSaleCreditCard.controls.creditCardHolder.touched)}">
+          <label for="inputCreditCardHolder" class="control-label">Nome impresso</label>
+          <input type="text" id="inputCreditCardHolder" class="form-control"
+                 formControlName="creditCardHolder"
+                 [(ngModel)]="payment.CreditCard.Holder" name="creditCardHolder">
+          <span class="control-label" *ngIf="formForSaleCreditCard.controls.creditCardHolder.errors
+              && formForSaleCreditCard.controls.creditCardHolder.errors.required
+              && (formForSaleCreditCard.controls.creditCardHolder.dirty ||
+              formForSaleCreditCard.controls.creditCardHolder.touched)">
+            Nome é obrigatório
+          </span>
+        </div>
+        <div class="col-lg-4 col-md-4 form-group" [ngClass]="{'has-error' :
+          formForSaleCreditCard.controls.creditCardInstallments.errors &&
+          (formForSaleCreditCard.controls.creditCardInstallments.dirty ||
+          formForSaleCreditCard.controls.creditCardInstallments.touched)}">
+          <label for="inputCreditCardInstallments" class="control-label">Parcelas</label>
+          <select name="creditCardInstallments" id="inputCreditCardInstallments" class="form-control"
+                  formControlName="creditCardInstallments"
+                  [(ngModel)]="payment.Installments">
+            <option value="1">1x</option>
+            <!--<option value="2">2x</option>
+            <option value="3">3x</option>
+            <option value="4">4x</option>
+            <option value="5">5x</option>
+            <option value="6">6x</option>
+            <option value="7">7x</option>
+            <option value="8">8x</option>
+            <option value="9">9x</option>
+            <option value="10">10x</option>
+            <option value="11">11x</option>
+            <option value="12">12x</option>-->
+          </select>
+          <span class="control-label" *ngIf="formForSaleCreditCard.controls.creditCardInstallments.errors
+              && formForSaleCreditCard.controls.creditCardInstallments.errors.required
+              && (formForSaleCreditCard.controls.creditCardInstallments.dirty ||
+              formForSaleCreditCard.controls.creditCardInstallments.touched)">
+            Quant. de parcelas é obrigatória
+          </span>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="row" *ngIf="paymentMethod === 'DEBIT'" style="margin: 0;">
+    <form name="formForSaleDebitCard" [formGroup]="formForSaleDebitCard">
+      <div class="row">
+        <div class="col-lg-4 col-md-4 form-group" [ngClass]="{'has-error' :
+          formForSaleDebitCard.controls.debitCardBrand.errors && (formForSaleDebitCard.controls.debitCardBrand.dirty ||
+          formForSaleDebitCard.controls.debitCardBrand.touched)}">
+          <label for="inputDebitCardBrand" class="control-label">Bandeira</label>
+          <select name="debitCardBrand" id="inputDebitCardBrand" class="form-control"
+                  [(ngModel)]="payment.DebitCard.Brand" formControlName="debitCardBrand">
+            <option value="Visa">Visa</option>
+            <option value="Master">MasterCard</option>
+            <option value="Elo">Elo</option>
+            <option value="Diners">Diners Club</option>
+            <option value="">Hipercard</option>
+          </select>
+          <span class="control-label" *ngIf="formForSaleDebitCard.controls.debitCardBrand.errors
+              && formForSaleDebitCard.controls.debitCardBrand.errors.required
+              && (formForSaleDebitCard.controls.debitCardBrand.dirty ||
+              formForSaleDebitCard.controls.debitCardBrand.touched)">
+            Bandeira é obrigatória
+          </span>
+        </div>
+        <div class="col-lg-4 col-md-4 form-group"
+             [ngClass]="{'has-error' :
+          formForSaleDebitCard.controls.debitCardNumber.errors && (formForSaleDebitCard.controls.debitCardNumber.dirty ||
+          formForSaleDebitCard.controls.debitCardNumber.touched)}">
+          <label for="inputDebitCardNumber" class="control-label">Número</label>
+          <input type="text" name="debitCardNumber" id="inputDebitCardNumber" class="form-control"
+                 formControlName="debitCardNumber"
+                 [(ngModel)]="payment.DebitCard.CardNumber">
+          <span class="control-label" *ngIf="formForSaleDebitCard.controls.debitCardNumber.errors
+              && formForSaleDebitCard.controls.debitCardNumber.errors.required
+              && (formForSaleDebitCard.controls.debitCardNumber.dirty ||
+              formForSaleDebitCard.controls.debitCardNumber.touched)">
+            Número é obrigatório
+          </span>
+          <span class="control-label" *ngIf="formForSaleDebitCard.controls.debitCardNumber.errors
+              && formForSaleDebitCard.controls.debitCardNumber.errors.minlength
+              && (formForSaleDebitCard.controls.debitCardNumber.dirty ||
+              formForSaleDebitCard.controls.debitCardNumber.touched)">
+            Número do cartão deve ter no mínimo 16 caracteres
+          </span>
+        </div>
+        <div class="col-lg-2 col-md-2 form-group" [ngClass]="{'has-error' :
+          formForSaleDebitCard.controls.debitCardExpirationDate.errors && (formForSaleDebitCard.controls.debitCardExpirationDate.dirty ||
+          formForSaleDebitCard.controls.debitCardExpirationDate.touched)}">
+          <label for="inputDebitCardValidDate" class="control-label">Validade</label>
+          <input type="text" id="inputDebitCardValidDate" name="debitCardExpirationDate" class="form-control"
+                 formControlName="debitCardExpirationDate"
+                 [textMask]="{mask: maskValidDate}" [(ngModel)]="payment.DebitCard.ExpirationDate">
+          <span class="control-label" *ngIf="formForSaleDebitCard.controls.debitCardExpirationDate.errors
+              && formForSaleDebitCard.controls.debitCardExpirationDate.errors.required
+              && (formForSaleDebitCard.controls.debitCardExpirationDate.dirty ||
+              formForSaleDebitCard.controls.debitCardExpirationDate.touched)">
+            Data é obrigatória
+          </span>
+        </div>
+        <div class="col-lg-2 col-md-2 form-group" [ngClass]="{'has-error' :
+          formForSaleDebitCard.controls.debitCardSecurityCode.errors &&
+          (formForSaleDebitCard.controls.debitCardSecurityCode.dirty ||
+          formForSaleDebitCard.controls.debitCardSecurityCode.touched)}">
+          <label for="inputDebitCardSecurityCode" class="control-label">Cód. Segurança</label>
+          <input type="text" id="inputDebitCardSecurityCode" class="form-control"
+                 [textMask]="{mask: maskSecurityCode}" formControlName="debitCardSecurityCode"
+                 [(ngModel)]="payment.DebitCard.SecurityCode" name="debitCardSecurityCode">
+          <span class="control-label" *ngIf="formForSaleDebitCard.controls.debitCardSecurityCode.errors
+              && formForSaleDebitCard.controls.debitCardSecurityCode.errors.required
+              && (formForSaleDebitCard.controls.debitCardSecurityCode.dirty ||
+              formForSaleDebitCard.controls.debitCardSecurityCode.touched)">
+            Código é obrigatório
+          </span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-4 col-md-4 form-group" [ngClass]="{'has-error' :
+          formForSaleDebitCard.controls.debitCardHolder.errors &&
+          (formForSaleDebitCard.controls.debitCardHolder.dirty ||
+          formForSaleDebitCard.controls.debitCardHolder.touched)}">
+          <label for="inputDebitCardHolder" class="control-label">Nome impresso</label>
+          <input type="text" id="inputDebitCardHolder" class="form-control"
+                 formControlName="debitCardHolder"
+                 [(ngModel)]="payment.DebitCard.Holder" name="debitCardHolder">
+          <span class="control-label" *ngIf="formForSaleDebitCard.controls.debitCardHolder.errors
+              && formForSaleDebitCard.controls.debitCardHolder.errors.required
+              && (formForSaleDebitCard.controls.debitCardHolder.dirty ||
+              formForSaleDebitCard.controls.debitCardHolder.touched)">
+            Nome é obrigatório
+          </span>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="row">
+    <div class="col-lg-12 col-md-12 form-group" *ngIf="paymentMethod === 'CREDIT'">
+      <button class="btn btn-primary pull-right" id="btnDoPaymentForSaleCreditCard" [disabled]="!formForSale.valid ||
+      !formForSaleCreditCard.valid ||
+      (amountString !== undefined && amountString === 0)"
+              (click)="doPayment()">Finalizar</button>
+    </div>
+    <div class="col-lg-12 col-md-12 form-group" *ngIf="paymentMethod === 'DEBIT'">
+      <button class="btn btn-primary pull-right" id="btnDoPaymentForSaleDebitCard"
+              [disabled]="!formForSale.valid || !formForSaleDebitCard.valid ||
+      (amountString !== undefined && amountString === 0)"
+              (click)="doPayment()">Finalizar</button>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-lg-12 col-md-12 form-group">
+      <ng2-slim-loading-bar [color]="'#204d74'" [height]="'4px'"></ng2-slim-loading-bar>
+    </div>
+  </div>
+</form>
+
+<div bsModal #modalReceiptForSale="bs-modal" class="modal fade" tabindex="-1" role="dialog"
+     aria-labelledby="myLargeModalLabel" aria-hidden="true">
+
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title pull-left">Comprovante de Pagamento</h4>
+        <button type="button" class="close pull-right" (click)="modalReceiptForSale.hide()" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-lg-5 col-md-5" id="div-payment-receipt-for-sale" style="background-color: #EBFAFF;max-width: 250px;">
+            <p style="max-width: 220px; text-align: center"
+               *ngIf="paymentMethod === 'CREDIT'">DEMONSTRACAO DE COMPROVANTE CREDITO</p>
+            <p style="max-width: 220px; text-align: center"
+               *ngIf="paymentMethod === 'DEBIT'">DEMONSTRACAO DE COMPROVANTE DEBITO</p>
+            <br>
+            <p style="max-width: 220px; text-align: left"><strong>Estabelecimento: </strong>{{client?.name}}</p>
+            <p class="text-left">CNPJ:&nbsp;{{client?.cnpj}}</p>
+            <p style="max-width: 220px; text-align: left">
+              {{client?.address}},&nbsp;{{client?.addressNumber}},&nbsp;{{client?.neighborhood}}
+            </p>
+            <br>
+            <p style="text-align: left">Emissor: G2 Soft Comércio LTDA</p>
+            <p class="text-left">CNPJ: 14.272.237/0001-36</p>
+            <!--<p class="text-left">Rua Presidente Kennedy, 122, Centro</p>
+            <p class="text-left">Mamanguape - PB</p>-->
+            <br>
+            <p style="max-width: 220px; text-align: left">Discriminação:&nbsp;{{paymentDescription}}</p>
+            <p style="text-align: left;max-width: 220px;"><strong>VALOR:</strong></p>
+            <p style="margin-top: -15px; text-align: right;max-width: 220px;"><strong>{{amountString | number : '1.2-2'}}</strong></p>
+            <!--Outros valores-->
+            <p style="text-align: left;max-width: 220px;">******{{getLast4DigitsFromCard()}}</p>
+            <p *ngIf="paymentMethod === 'CREDIT'"
+               style="margin-top: -15px;text-align: right;max-width: 220px;">Parcelas:&nbsp; {{cieloPayment?.installments}}</p>
+            <p class="text-left"><strong>{{getCurrentDate('DD/MM/YYYY')}}</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>{{getCurrentDate('hh:mm')}}</strong></p>
+            <p style="text-align: left">Transacao: {{cieloPayment?.tid}}</p>
+            <p style="text-align: left;max-width: 220px;">NSU: {{cieloPayment?.proofOfSale}}</p>
+            <!--<hr style="border-top: 1px dashed #8c8b8b;max-width: 220px;text-align: left">-->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="row">
+          <div class="col-lg-12">
+            <button class="btn" (click)="modalReceiptForSale.hide()">Cancelar</button>
+            <button class="btn btn-primary" (click)="print()">
+              <span class="fa fa-print"></span> Imprimir
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

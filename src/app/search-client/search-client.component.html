@@ -1,0 +1,22 @@
+<div class="container text-center">
+  <div class="row">
+    <div class="col-lg-12 col-md-12 img-responsive">
+      <img src="src/assets/images/logo_g2.jpeg" alt="G2 Logo"><br>
+      <small>(83) 3292-3886</small>
+    </div>
+  </div>
+  <div class="row" style="margin-top: 15px;">
+    <form name="formSearchClient" class="inline-form" style="max-width: 400px; margin-left: auto; margin-right: auto;">
+      <div class="col-lg-9 col-md-9">
+        <input type="text" name="clientCnpj" class="form-control" placeholder="CNPJ" [(ngModel)]="clientCnpj"
+               [textMask]="{mask: maskCNPJ}" (keyup.enter)="searchClient()">
+      </div>
+      <div class="col-lg-3 col-md-3">
+        <button type="button" class="btn btn-primary" [disabled]="clientCnpj.length == 0" (click)="searchClient()">Consultar</button>
+      </div>
+      <div class="col-lg-6 col-md-6 has-error">
+        <span class="control-label">{{searchClientError}}</span>
+      </div>
+    </form>
+  </div>
+</div>
