@@ -1,4 +1,5 @@
 import {BilletShipping} from './billet-payment/billet-shipping';
+import { Bank } from './bank';
 
 export class BillToPayPayment {
 
@@ -23,6 +24,7 @@ export class BillToPayPayment {
   public bankId: number;
   public dateStatus: string;
   public billetShipping: BilletShipping;
+  public bank: Bank;
 
   constructor() {
     this.amount = 0.0;

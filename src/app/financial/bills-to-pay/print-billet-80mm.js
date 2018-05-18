@@ -45,7 +45,8 @@ output.document.write(`
   font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;
 }
 .billetLeftField2 {
-  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; border-left: 0.15mm solid #000000;
+  font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; 
+  border-left: 0.15mm solid #000000;
 }
 .billetLeftField {
   font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm;
@@ -81,33 +82,30 @@ output.document.write(`
 }
 .logo80mm{
   text-align: left;  border-right: 0.15mm solid #000000; 
-  border-bottom: 0.15mm solid #000000; display: table-caption;float: left;
+  border-bottom: 0.15mm solid #000000;
 }
 .billetRightField80mm {
   font-size: 0.2cm; font-family: arial, verdana; padding-left : 1mm; padding-right: 1mm;
-  border-left: 0.15mm solid #000000; display: table-caption;float: left;
+  border-left: 0.15mm solid #000000;
 }
 .bankCode80mm {
   font-size: 5mm; font-family: arial, verdana; font-weight : bold;
   font-style: italic; text-align: center; vertical-align: bottom;
-  border-right: none; border-bottom: 0.15mm solid #000000;
-  display: table-caption;float: left; padding-bottom: 0.5px;
+  border-right: none; border-bottom: 0.15mm solid #000000;padding-bottom: 0.5px;
 }
 .billetNumber80mm {
-      font-size: 5mm;
+      font-size: 3mm;
     font-family: arial, verdana;
     font-weight: bold;
     vertical-align: bottom;
     border-bottom: 0.15mm solid #000000;
     padding-bottom: 0.5px;
-    display: table-caption;
-    float: left;
     padding-left: 1px;
 }
 .billetLeftValue80mm {
   font-size: 0.20cm;font-family: arial, verdana; padding-left: 1mm; padding-right: 1mm;
   text-align: center; font-weight: bold; border-left: 0.15mm solid #000000;
-  border-bottom: 0.15mm solid #000000; display: table-caption;float: left;    
+  border-bottom: 0.15mm solid #000000;
 }
 .trBillet80mm {
     display: table-caption; width: 920px; max-height: 8px !important;
@@ -119,4 +117,4 @@ output.document.write(`
 output.document.close();
 output.focus();
 output.print();
-document.getElementById('ifrOutput80mm').style.display = 'none';
+// document.getElementById('ifrOutput80mm').style.display = 'none';

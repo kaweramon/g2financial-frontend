@@ -78,6 +78,12 @@ output.document.write(`
 .tr-border-bottom {
   border-bottom: 0.15mm solid #000000;
 }
+.vertical-text {
+  writing-mode: vertical-lr;
+  text-orientation: upright;
+  font-size: 9px;
+  letter-spacing: 0.1px;
+}
 </style>
           <title>Comprovante</title>
         </head>

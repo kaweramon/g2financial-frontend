@@ -1,3 +1,5 @@
+import { Bank } from "../bank";
+
 export class BilletShipping {
   public id: number;
   public counter: number;
@@ -11,8 +13,10 @@ export class BilletShipping {
   public chargingType: string;
   public partialPayment: string;
   public documentNumber: string;
+  public codeBar: string;
 
   constructor() {
     this.ourNumber = "";
+    this.codeBar = "";
   }
 }

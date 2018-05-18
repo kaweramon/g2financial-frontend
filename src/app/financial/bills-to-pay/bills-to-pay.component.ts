@@ -66,7 +66,7 @@ export class BillsToPayComponent {
   public ourNumberSantander: string;
 
   constructor(private route: ActivatedRoute, private service: BillToPayService, private elementRef: ElementRef,
-              private bankService: BankService,private typeInterestService: TypeInterestChargeService,
+              private bankService: BankService, private typeInterestService: TypeInterestChargeService,
               private clientService: ClientService, private slimLoadingBarService: SlimLoadingBarService) {
     this.payment = new Payment();
     this.paymentMethod = 'BILLET';
@@ -75,6 +75,7 @@ export class BillsToPayComponent {
     });
     this.slimLoadingBarService.start();
     this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(result => {
+      console.log(result);
       this.listBillToPayPayment = result;
       if (this.listBillToPayPayment !== undefined && this.listBillToPayPayment.length > 0) {
         this.listBillToPayPayment.forEach(billToPayPayment => {
@@ -113,10 +114,12 @@ export class BillsToPayComponent {
     billToPayPayment.isChecked = false;
     if (billToPayPayment.maturity === (moment().subtract(1, 'd').format('YYYY-MM-DD'))) {
       billToPayPayment.isChecked = true;
+      this.listSelectedBillToPayPayment.push(billToPayPayment);
       billToPayPayment.dateStatus = 'IS_SAME';
     }
     if (moment(billToPayPayment.maturity).add(1, 'd').isBefore(moment().format('YYYY-MM-DD'))) {
       billToPayPayment.isChecked = true;
+      this.listSelectedBillToPayPayment.push(billToPayPayment);
       billToPayPayment.dateStatus = 'IS_BEFORE';
     }
   }
@@ -127,18 +130,22 @@ export class BillsToPayComponent {
     let month = moment(billToPayment.maturity).add(1, 'd').month();
     let day = moment(billToPayment.maturity).add(1, 'd').date();
     let now = moment();
-    let monthInArrears = parseInt(moment([now.year(), now.month(), now.date()]).diff(moment([year, month, day]),
+    let monthInArrears = parseInt(moment([now.year(), now.month(), now.date()])
+      .diff(moment([year, month, day]),
       'months', true).toString(), 10);
     let daysInArrears = parseInt(moment().diff(moment(billToPayment.maturity).add(1, 'd'),
       'days').toString(), 10);
     billToPayment.daysInArrears = daysInArrears;
     let chargesInDayMonths: Array<number> = [];
     if (daysInArrears !== undefined && daysInArrears > 0 && this.typeInterestCharge) {
-      billToPayment.amountInterest = (billToPayment.amount / 100) * this.typeInterestCharge.percentInterest;
+      billToPayment.amountInterest = (billToPayment.amount / 100) *
+        this.typeInterestCharge.percentInterest;
       billToPayment.amountCharges = 0.0;
       for (let i = 0; i < daysInArrears; i++) {
-        billToPayment.amountCharges += (billToPayment.amount / 100) * this.typeInterestCharge.percentCharges;
-        if (monthInArrears !== undefined && monthInArrears > 0 && i > 28 && moment(billToPayment.maturity).add(i + 1, 'd').date() === day) {
+        billToPayment.amountCharges += (billToPayment.amount / 100) *
+          this.typeInterestCharge.percentCharges;
+        if (monthInArrears !== undefined && monthInArrears > 0 && i > 28
+            && moment(billToPayment.maturity).add(i + 1, 'd').date() === day) {
           chargesInDayMonths.push(billToPayment.amountCharges);
         }
       }
@@ -173,17 +180,10 @@ export class BillsToPayComponent {
     this.billetShipping.documentNumber = this.ourNumber.substring(
       this.ourNumber.length - 7, this.ourNumber.length - 2);
     this.codeBar = "";
-    // this.printBillet();
     this.bankService.getBankById(bankId).subscribe(bank => {
       this.bank = bank;
       this.generateCodeBarCaixa(this.generateQrCode(this.print()));
     });
-
-    /*setTimeout(() => {
-      this.billetGenerated = true;
-      this.generateQrBarCode();
-      // this.printBillet();
-    }, 500);*/
   }
 
   private generateCodeBarCaixa(callback): void {
@@ -299,7 +299,7 @@ export class BillsToPayComponent {
       if (i === 5 || i === 13 || i === 21 || i === 29 || i === 37) {
         total += parseInt(calcStrArray[i], 10) * 7;
       }
-      if (i == 6 || i == 14 || i === 22 || i === 30 || i === 38) {
+      if (i === 6 || i === 14 || i === 22 || i === 30 || i === 38) {
         total += parseInt(calcStrArray[i], 10) * 6;
       }
       if (i === 7 || i === 15 || i === 23 || i === 31 || i === 39) {
@@ -347,14 +347,14 @@ export class BillsToPayComponent {
   // CAMPO LIVRE DO CÓDIGO DE BARRAS
   private getFreeCampCodeBar(beneficCode: string, dvBenefictCode: string, ourNumber: string): number {
     let result: number;
-    let strCalcFreeCamp = beneficCode + dvBenefictCode + ourNumber.substring(0, 3) + "1" + 
+    let strCalcFreeCamp = beneficCode + dvBenefictCode + ourNumber.substring(0, 3) + "1" +
     ourNumber.substring(3, 6) + "4" +
       ourNumber.substring(6 , ourNumber.length);
     let strInverted = strCalcFreeCamp.split("").reverse().join("");
     let multiplicationIndex: number = 2;
     let total: number = 0;
     for (let i = 0; i < strInverted.length; i++) {
-      if (i == 8 || i == 16) {
+      if (i === 8 || i === 16) {
         multiplicationIndex = 2;
       }
       total += (parseInt(strInverted[i], 10)) * multiplicationIndex;
@@ -377,7 +377,7 @@ export class BillsToPayComponent {
     let toReturn: string = "";
     let cleanValueStr: string = "";
     if (billValue.toString().indexOf(".") === -1 && billValue.toString().indexOf(",") === -1) {
-      for (let i = 0; i < (8 - billValue.toString().length);i++) {
+      for (let i = 0; i < (8 - billValue.toString().length); i++) {
         toReturn += "0";
       }
       toReturn += billValue;
@@ -472,7 +472,7 @@ export class BillsToPayComponent {
     let codeBarFirstGroup = "033998548";
     let codeBarFirstGroupInverted = codeBarFirstGroup.split("").reverse().join("");
     let total = 0;
-    for (let i = 0; i < codeBarFirstGroupInverted.length;i++) {
+    for (let i = 0; i < codeBarFirstGroupInverted.length; i++) {
       let currentNumber = parseInt(codeBarFirstGroupInverted[i], 10);
       if (i === 4 && currentNumber === 9) {
         total += currentNumber;
@@ -569,25 +569,28 @@ export class BillsToPayComponent {
   }
 
   public showModalBillet(billetShipping: BilletShipping, bankId: number): void {
+    console.log("showModalBillet");
     this.billetShipping = Object.assign({}, billetShipping);
     this.bankService.getBankById(bankId).subscribe(bank => {
       this.bank = bank;
       if (bank.id === 10)
         this.generateCodeBarCaixa(undefined);
       else if (bank.id === 9)
-        this.generateBarCodeSantander();
+        this.generateBarCodeSantander(this.billetShipping);
       this.modalLateBill.show();
     });
   }
 
   public showModalChoosePrintType(billetShipping: BilletShipping, bankId: number): void {
+    console.log("showModalChoosePrintType");
     this.billetShipping = Object.assign({}, billetShipping);
     this.bankService.getBankById(bankId).subscribe(bank => {
+      console.log(bank);
       this.bank = bank;
       if (bank.id === 10)
         this.generateCodeBarCaixa(undefined);
       else if (bank.id === 9)
-        this.generateBarCodeSantander();
+        this.generateBarCodeSantander(this.billetShipping);
       this.modalChoosePrintType.show();
     });
   }
@@ -612,36 +615,40 @@ export class BillsToPayComponent {
     return moment(maturityDate) < moment([2017, 8, 30]);
   }
 
-  private generateBarCodeSantander(): void {
-    this.ourNumberSantander = this.billetShipping.ourNumber.substring(
-      this.billetShipping.ourNumber.length - 12, this.billetShipping.ourNumber.length);
+  private generateBarCodeSantander(billetShipping: BilletShipping): void {
+    this.ourNumberSantander = billetShipping.ourNumber.substring(
+      billetShipping.ourNumber.length - 12, billetShipping.ourNumber.length);
 
     let firstGroup = '03399' + this.beneficiaryCodeSantander.substr(0, 4)
       + this.getFirstGroupSantander();
 
     let secondGroup = this.beneficiaryCodeSantander.substr(4, 7)
-      + this.ourNumberSantander.substr(0, 7) + this.getSecondGroupSantander();
+      + this.ourNumberSantander.substr(0, 7) + this.getSecondGroupSantander(billetShipping);
 
     let thirdGroup = this.ourNumberSantander.substring(7, 12)
-      + this.getVerifyDigitOurNumberSantander() + '0101' + this.getThridGroupSantander();
+      + this.getVerifyDigitOurNumberSantander(this.ourNumberSantander) + '0101' +
+      this.getThridGroupSantander(this.ourNumberSantander);
 
-    let dvVerify = this.getVerifyDigitSantander('0339' + this.getMaturityFactor(this.billetShipping.maturityDate) +
-      this.getBilletCodeBarValue(this.billetShipping.billValue) + '9' + this.beneficiaryCodeSantander +
-      this.ourNumberSantander + this.getVerifyDigitOurNumberSantander() + '0' + '101');
+    console.log('NN: ' + this.ourNumberSantander);
+    console.log("digito verificador nosso numero: " + this.getVerifyDigitOurNumberSantander(this.ourNumberSantander))  ;
+
+    let dvVerify = this.getVerifyDigitSantander('0339' + this.getMaturityFactor(billetShipping.maturityDate) +
+      this.getBilletCodeBarValue(billetShipping.billValue) + '9' + this.beneficiaryCodeSantander +
+      this.ourNumberSantander.substr(0, 12) + this.getVerifyDigitOurNumberSantander(this.ourNumberSantander) + '0' + '101');
 
     let strBillValue: string = '';
-    let billValue = this.getBilletCodeBarValue(this.billetShipping.billValue);
+    let billValue = this.getBilletCodeBarValue(billetShipping.billValue);
     for (let i = 0; i < (10 - billValue.length); i++) {
       strBillValue += '0';
     }
     strBillValue += billValue;
 
-    let fifthGroup = this.getMaturityFactor(this.billetShipping.maturityDate)
+    let fifthGroup = this.getMaturityFactor(billetShipping.maturityDate)
       + strBillValue;
 
     console.log(firstGroup + ' ' + secondGroup + ' ' + thirdGroup + ' ' + dvVerify + ' ' + fifthGroup);
 
-    this.codeBar = firstGroup + ' ' + secondGroup + ' ' + thirdGroup + ' ' + dvVerify + ' ' + fifthGroup;
+    billetShipping.codeBar = firstGroup + ' ' + secondGroup + ' ' + thirdGroup + ' ' + dvVerify + ' ' + fifthGroup;
   }
 
   private getFirstGroupSantander(): number {
@@ -671,9 +678,9 @@ export class BillsToPayComponent {
     return toReturn;
   }
 
-  private getSecondGroupSantander(): number {
+  private getSecondGroupSantander(billetShipping: BilletShipping): number {
     let secondGroupReversed = (this.beneficiaryCodeSantander.substr(4, 7) +
-    this.billetShipping.ourNumber.substr(0, 7)).split('').reverse().join('');
+    billetShipping.ourNumber.substr(0, 7)).split('').reverse().join('');
 
     let totalSum: number = 0;
 
@@ -700,14 +707,12 @@ export class BillsToPayComponent {
     return toReturn;
   }
 
-  private getVerifyDigitOurNumberSantander(): number {
-    console.log('NN: ' + this.ourNumberSantander);
-    let ourNumberInverted = this.ourNumberSantander.split('').reverse().join('');
-
+  private getVerifyDigitOurNumberSantander(ourNumberSantander: string): number {
+    let ourNumberInverted = ourNumberSantander.substr(0, 12).split('').reverse().join('');
     let numToMult: number = 2;
     let total: number = 0;
     for (let i = 0; i < ourNumberInverted.length; i++) {
-      if (numToMult >= 9)
+      if (numToMult > 9)
         numToMult = 2;
       total += parseInt(ourNumberInverted[i], 10) * numToMult;
       numToMult++;
@@ -720,14 +725,21 @@ export class BillsToPayComponent {
     return 11 - rest;
   }
 
-  public getThridGroupSantander(): number {
+  public getThridGroupSantander(ourNumberSantander: string): number {
 
-    let thirdGroupInverted = (this.ourNumberSantander.substring(7, 11) + this.getVerifyDigitOurNumberSantander() +
+    let thirdGroupInverted = (ourNumberSantander.substring(7, 12) +
+    this.getVerifyDigitOurNumberSantander(ourNumberSantander) +
       '0101').split('').reverse().join('');
     let total: number = 0;
     for (let i = 0; i < thirdGroupInverted.length; i++) {
       if (i % 2 === 0 || i === 0) {
-        total += parseInt(thirdGroupInverted[i], 10) * 2;
+        let currentResult = parseInt(thirdGroupInverted[i], 10) * 2;
+        if (currentResult > 9) {
+          total += parseInt(currentResult.toString().split('')[0], 10) +
+            parseInt(currentResult.toString().split('')[1], 10);
+        } else {
+          total += currentResult;
+        }
       } else {
         total += parseInt(thirdGroupInverted[i], 10) * 1;
       }
@@ -742,21 +754,86 @@ export class BillsToPayComponent {
 
   private getVerifyDigitSantander(barCode: string): number {
     let strBarCodeInverted = barCode.split('').reverse().join('');
+    console.log(strBarCodeInverted);
     let numToMult: number = 2;
     let total: number = 0;
     for (let i = 0; i < strBarCodeInverted.length; i++) {
-      if (numToMult >= 9)
+      if (numToMult > 9)
         numToMult = 2;
       total += parseInt(strBarCodeInverted[i], 10) * numToMult;
+      numToMult++;
     }
-    let result: number = ((total * 10) / 11);
-    if (result.toString().indexOf('.') > 0) {
-      let rest = result.toString().split('.')[1];
-      console.log(rest[rest.length - 1]);
-      result = Math.ceil(parseInt(rest[rest.length - 1], 10));
-    }
+    return ((total * 10) % 11);
+  }
 
-    return result;
+  public onChangeCheckBillet(billToPayPayment: BillToPayPayment, event: any): void {
+    if (event.target.checked) {
+      if (billToPayPayment.billetShipping) {
+        // billToPayPayment.billetShipping.codeBar = this.getSantanderCodeBar(billToPayPayment.billetShipping);
+        console.log(billToPayPayment.id);
+        setTimeout(() => {
+          document.getElementById("tdBilletCarneCodeBar80mmValue_" + billToPayPayment.id).textContent =
+          this.getSantanderCodeBar(billToPayPayment.billetShipping);
+        }, 1000);
+      }
+      this.bankService.getBankById(billToPayPayment.bankId).subscribe(bank => {
+        billToPayPayment.bank = bank;
+        if (this.listSelectedBillToPayPayment.indexOf(billToPayPayment) === -1)
+          this.listSelectedBillToPayPayment.push(billToPayPayment);
+      });
+      console.log(billToPayPayment.billetShipping);
+    } else {
+      if (this.listSelectedBillToPayPayment.indexOf(billToPayPayment) !== - 1){
+        this.listSelectedBillToPayPayment.splice(
+          this.listSelectedBillToPayPayment.indexOf(billToPayPayment), 1);
+      }
+    }
+  }
+
+  public printCarne80mm(): void {
+    console.log(this.listSelectedBillToPayPayment);
+    document.getElementById("btnPrintCarne80mm").setAttribute("disabled", "disabled");
+    $('#btnPrintCarne80mm').prop("disabled", "disabled");
+    let scriptPrintBillet80mm = document.createElement("script");
+    scriptPrintBillet80mm.type = "text/javascript";
+    scriptPrintBillet80mm.src = "src/app/financial/bills-to-pay/generate_carne_print_80mm.js";
+    this.elementRef.nativeElement.appendChild(scriptPrintBillet80mm);
+    document.getElementById("btnPrintCarne80mm").removeAttribute("disabled");
+  }
+
+  private getSantanderCodeBar(billetShipping: BilletShipping): string {
+    let ourNumberSantander = billetShipping.ourNumber.substring(
+      billetShipping.ourNumber.length - 12, billetShipping.ourNumber.length);
+
+    let firstGroup = '03399' + this.beneficiaryCodeSantander.substr(0, 4)
+      + this.getFirstGroupSantander();
+
+    let secondGroup = this.beneficiaryCodeSantander.substr(4, 7)
+      + ourNumberSantander.substr(0, 7) + this.getSecondGroupSantander(billetShipping);
+
+    let thirdGroup = ourNumberSantander.substring(7, 12)
+      + this.getVerifyDigitOurNumberSantander(ourNumberSantander) + '0101' + this.getThridGroupSantander(ourNumberSantander);
+
+    console.log('NN: ' + ourNumberSantander);
+    console.log("digito verificador nosso numero: " + this.getVerifyDigitOurNumberSantander(ourNumberSantander))  ;
+
+    let dvVerify = this.getVerifyDigitSantander('0339' + this.getMaturityFactor(billetShipping.maturityDate) +
+      this.getBilletCodeBarValue(billetShipping.billValue) + '9' + this.beneficiaryCodeSantander +
+      ourNumberSantander.substr(0, 12) + this.getVerifyDigitOurNumberSantander(ourNumberSantander) + '0' + '101');
+
+    let strBillValue: string = '';
+    let billValue = this.getBilletCodeBarValue(billetShipping.billValue);
+    for (let i = 0; i < (10 - billValue.length); i++) {
+      strBillValue += '0';
+    }
+    strBillValue += billValue;
+
+    let fifthGroup = this.getMaturityFactor(billetShipping.maturityDate)
+      + strBillValue;
+
+    console.log(firstGroup + ' ' + secondGroup + ' ' + thirdGroup + ' ' + dvVerify + ' ' + fifthGroup);
+
+    return firstGroup + ' ' + secondGroup + ' ' + thirdGroup + ' ' + dvVerify + ' ' + fifthGroup;
   }
 
 }
