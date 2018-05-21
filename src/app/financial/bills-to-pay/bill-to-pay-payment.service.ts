@@ -6,7 +6,7 @@ import {Observable} from 'rxjs/Observable';
 @Injectable()
 export class BillToPayPaymentService {
 
-  private urlBillToPayPayment = 'http://localhost:8080/bill-to-pay-payment/';
+  private urlBillToPayPayment = 'bill-to-pay-payment/';
   private urlSandBox = 'https://apisandbox.cieloecommerce.cielo.com.br/1/sales';
   headers = new Headers({ 'Content-Type': 'application/json' });
   private params = new URLSearchParams();

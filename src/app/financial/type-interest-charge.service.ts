@@ -6,7 +6,7 @@ import {TypeInterestCharge} from './type-interest-charge';
 @Injectable()
 export class TypeInterestChargeService {
 
-  private urlTypeInterestBillToPay = 'http://localhost:8080/type-interest/';
+  private urlTypeInterestBillToPay = 'type-interest/';
   headers = new Headers({ 'Content-Type': 'application/json' });
   private params = new URLSearchParams();
 

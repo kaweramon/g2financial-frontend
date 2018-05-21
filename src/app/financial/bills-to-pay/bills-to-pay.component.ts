@@ -73,20 +73,44 @@ export class BillsToPayComponent {
     this.clientService.view(this.route.snapshot.params["clientId"]).subscribe(client => {
       this.client = client;
     });
+    this.injectDrawBarCodeScript();
     this.slimLoadingBarService.start();
+
     this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(result => {
-      console.log(result);
       this.listBillToPayPayment = result;
       if (this.listBillToPayPayment !== undefined && this.listBillToPayPayment.length > 0) {
         this.listBillToPayPayment.forEach(billToPayPayment => {
+          if (billToPayPayment.billetShipping) {
+            billToPayPayment.billetShipping.codeBar =
+            this.getSantanderCodeBar(billToPayPayment.billetShipping);
+          }
+          if (billToPayPayment.bank === undefined || billToPayPayment.bank === null
+            && billToPayPayment.bankId) {
+              this.bankService.getBankById(billToPayPayment.bankId).subscribe(resultBank => {
+                billToPayPayment.bank = resultBank;
+              });
+          }
           this.isDateLessOrEqualThanToday(billToPayPayment);
           this.calculateInterests(billToPayPayment);
+          setTimeout(() => {
+            let tdCodeBar = document.getElementById("tdBilletCarneCodeBar80mmValue_" + billToPayPayment.id);
+            if (tdCodeBar !== null) {
+              tdCodeBar.textContent = billToPayPayment.billetShipping.codeBar;
+            }
+          }, 1500);
         });
       }
       this.stopSlimLoadBar();
     }, error => {
       this.stopSlimLoadBar();
     });
+  }
+
+  private injectDrawBarCodeScript(): void {
+    let scriptDrawBarCode = document.createElement("script");
+    scriptDrawBarCode.type = "text/javascript";
+    scriptDrawBarCode.src = "src/app/financial/bills-to-pay/draw-barcode-carne.js";
+    this.elementRef.nativeElement.appendChild(scriptDrawBarCode);
   }
 
   private stopSlimLoadBar(): void {
@@ -113,13 +137,13 @@ export class BillsToPayComponent {
   public isDateLessOrEqualThanToday(billToPayPayment: any): void {
     billToPayPayment.isChecked = false;
     if (billToPayPayment.maturity === (moment().subtract(1, 'd').format('YYYY-MM-DD'))) {
-      billToPayPayment.isChecked = true;
-      this.listSelectedBillToPayPayment.push(billToPayPayment);
+      // billToPayPayment.isChecked = true;
+      // this.listSelectedBillToPayPayment.push(Object.assign({}, billToPayPayment));
       billToPayPayment.dateStatus = 'IS_SAME';
     }
     if (moment(billToPayPayment.maturity).add(1, 'd').isBefore(moment().format('YYYY-MM-DD'))) {
-      billToPayPayment.isChecked = true;
-      this.listSelectedBillToPayPayment.push(billToPayPayment);
+      // billToPayPayment.isChecked = true;
+      // this.listSelectedBillToPayPayment.push(Object.assign({}, billToPayPayment));
       billToPayPayment.dateStatus = 'IS_BEFORE';
     }
   }
@@ -448,7 +472,7 @@ export class BillsToPayComponent {
   }
 
   public getMaturityInterestDate(date): string {
-    return moment(date).add(2, 'd').format('DD/MM/YYYY');
+    return moment(date).add(1, 'd').format('DD/MM/YYYY');
   }
 
   private print(): void {
@@ -569,7 +593,6 @@ export class BillsToPayComponent {
   }
 
   public showModalBillet(billetShipping: BilletShipping, bankId: number): void {
-    console.log("showModalBillet");
     this.billetShipping = Object.assign({}, billetShipping);
     this.bankService.getBankById(bankId).subscribe(bank => {
       this.bank = bank;
@@ -582,10 +605,8 @@ export class BillsToPayComponent {
   }
 
   public showModalChoosePrintType(billetShipping: BilletShipping, bankId: number): void {
-    console.log("showModalChoosePrintType");
     this.billetShipping = Object.assign({}, billetShipping);
     this.bankService.getBankById(bankId).subscribe(bank => {
-      console.log(bank);
       this.bank = bank;
       if (bank.id === 10)
         this.generateCodeBarCaixa(undefined);
@@ -596,10 +617,6 @@ export class BillsToPayComponent {
   }
 
   onNotify(msg: any): void {
-    this.typeInterestService.getByType(this.billetShipping.chargingType).subscribe(result => {
-      this.typeInterestCharge = result;
-    }, errorReturned => {
-    });
     if (msg.message === 'printBillet') {
       document.getElementById('ifrOutput').style.display = 'block';
       this.generateBarCodeAndPrint();
@@ -629,9 +646,6 @@ export class BillsToPayComponent {
       + this.getVerifyDigitOurNumberSantander(this.ourNumberSantander) + '0101' +
       this.getThridGroupSantander(this.ourNumberSantander);
 
-    console.log('NN: ' + this.ourNumberSantander);
-    console.log("digito verificador nosso numero: " + this.getVerifyDigitOurNumberSantander(this.ourNumberSantander))  ;
-
     let dvVerify = this.getVerifyDigitSantander('0339' + this.getMaturityFactor(billetShipping.maturityDate) +
       this.getBilletCodeBarValue(billetShipping.billValue) + '9' + this.beneficiaryCodeSantander +
       this.ourNumberSantander.substr(0, 12) + this.getVerifyDigitOurNumberSantander(this.ourNumberSantander) + '0' + '101');
@@ -645,8 +659,6 @@ export class BillsToPayComponent {
 
     let fifthGroup = this.getMaturityFactor(billetShipping.maturityDate)
       + strBillValue;
-
-    console.log(firstGroup + ' ' + secondGroup + ' ' + thirdGroup + ' ' + dvVerify + ' ' + fifthGroup);
 
     billetShipping.codeBar = firstGroup + ' ' + secondGroup + ' ' + thirdGroup + ' ' + dvVerify + ' ' + fifthGroup;
   }
@@ -754,7 +766,6 @@ export class BillsToPayComponent {
 
   private getVerifyDigitSantander(barCode: string): number {
     let strBarCodeInverted = barCode.split('').reverse().join('');
-    console.log(strBarCodeInverted);
     let numToMult: number = 2;
     let total: number = 0;
     for (let i = 0; i < strBarCodeInverted.length; i++) {
@@ -767,31 +778,33 @@ export class BillsToPayComponent {
   }
 
   public onChangeCheckBillet(billToPayPayment: BillToPayPayment, event: any): void {
-    if (event.target.checked) {
+    if (event.target.checked && billToPayPayment.billetShipping !== null) {
+      $(".checkBillet").prop("disabled", "disabled");
+      if (this.listSelectedBillToPayPayment.indexOf(billToPayPayment) === -1)
+            this.listSelectedBillToPayPayment.push(billToPayPayment);
+      if (billToPayPayment.bank === undefined || billToPayPayment === null) {
+        this.bankService.getBankById(billToPayPayment.bankId).subscribe(bank => {
+          billToPayPayment.bank = bank;
+        });
+      }
       if (billToPayPayment.billetShipping) {
-        // billToPayPayment.billetShipping.codeBar = this.getSantanderCodeBar(billToPayPayment.billetShipping);
-        console.log(billToPayPayment.id);
+        billToPayPayment.billetShipping.codeBar = this.getSantanderCodeBar(billToPayPayment.billetShipping);
         setTimeout(() => {
           document.getElementById("tdBilletCarneCodeBar80mmValue_" + billToPayPayment.id).textContent =
-          this.getSantanderCodeBar(billToPayPayment.billetShipping);
-        }, 1000);
+          billToPayPayment.billetShipping.codeBar;
+          $(".checkBillet").prop("disabled", false);
+        }, 500);
       }
-      this.bankService.getBankById(billToPayPayment.bankId).subscribe(bank => {
-        billToPayPayment.bank = bank;
-        if (this.listSelectedBillToPayPayment.indexOf(billToPayPayment) === -1)
-          this.listSelectedBillToPayPayment.push(billToPayPayment);
-      });
-      console.log(billToPayPayment.billetShipping);
     } else {
-      if (this.listSelectedBillToPayPayment.indexOf(billToPayPayment) !== - 1){
-        this.listSelectedBillToPayPayment.splice(
-          this.listSelectedBillToPayPayment.indexOf(billToPayPayment), 1);
+      for (let i = 0; i < this.listSelectedBillToPayPayment.length; i++) {
+        if (this.listSelectedBillToPayPayment[i].id === billToPayPayment.id) {
+          this.listSelectedBillToPayPayment.splice(i, 1);
+        }
       }
     }
   }
 
   public printCarne80mm(): void {
-    console.log(this.listSelectedBillToPayPayment);
     document.getElementById("btnPrintCarne80mm").setAttribute("disabled", "disabled");
     $('#btnPrintCarne80mm').prop("disabled", "disabled");
     let scriptPrintBillet80mm = document.createElement("script");
@@ -814,9 +827,6 @@ export class BillsToPayComponent {
     let thirdGroup = ourNumberSantander.substring(7, 12)
       + this.getVerifyDigitOurNumberSantander(ourNumberSantander) + '0101' + this.getThridGroupSantander(ourNumberSantander);
 
-    console.log('NN: ' + ourNumberSantander);
-    console.log("digito verificador nosso numero: " + this.getVerifyDigitOurNumberSantander(ourNumberSantander))  ;
-
     let dvVerify = this.getVerifyDigitSantander('0339' + this.getMaturityFactor(billetShipping.maturityDate) +
       this.getBilletCodeBarValue(billetShipping.billValue) + '9' + this.beneficiaryCodeSantander +
       ourNumberSantander.substr(0, 12) + this.getVerifyDigitOurNumberSantander(ourNumberSantander) + '0' + '101');
@@ -830,8 +840,6 @@ export class BillsToPayComponent {
 
     let fifthGroup = this.getMaturityFactor(billetShipping.maturityDate)
       + strBillValue;
-
-    console.log(firstGroup + ' ' + secondGroup + ' ' + thirdGroup + ' ' + dvVerify + ' ' + fifthGroup);
 
     return firstGroup + ' ' + secondGroup + ' ' + thirdGroup + ' ' + dvVerify + ' ' + fifthGroup;
   }

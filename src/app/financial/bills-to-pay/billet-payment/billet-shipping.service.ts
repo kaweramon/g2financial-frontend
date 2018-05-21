@@ -6,7 +6,7 @@ import {Observable} from 'rxjs/Observable';
 @Injectable()
 export class BilletShippingService {
 
-  private urlBilletShipping = 'http://localhost:8080/billet-shipping/';
+  private urlBilletShipping = 'billet-shipping/';
   headers = new Headers({ 'Content-Type': 'application/json' });
   private params = new URLSearchParams();
 

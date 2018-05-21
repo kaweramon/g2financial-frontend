@@ -1,27 +1,27 @@
 var number = '34195.00008 01233.203189 64221.470004 5 84410000002000';
 var divs = document.getElementsByTagName('div');
-var divsCarne = []
+var divsCarne = [];
 var boleto = undefined;
 
-for (var i = 0; i < divs.length; i++) {
+ for (var i = 0; i < divs.length; i++) {
   if (divs[i].id.toString().indexOf("Carne") !== - 1)  {
-    let index = divs[i].id.substr(divs[i].id.indexOf("_") + 1, divs[i].id.length - 1);
+    let billToPayPaymentId = divs[i].id.substr(divs[i].id.indexOf("_") + 1, divs[i].id.length - 1);
     divsCarne.push(divs[i].innerHTML);
-    console.log(document.getElementById("tdBilletCarneBarCode80mm_" + index));
+    /* console.log(document.getElementById("tdBilletCarneBarCode80mm_" + billToPayPaymentId));
     var codeBarTd = divs[i].getElementsByClassName("billetNumber80mm")[0];
     console.log(codeBarTd);
     if (codeBarTd !== undefined) {
       console.log(codeBarTd.textContent);
-      if (document.getElementById("tdBilletCarneBarCode80mm_" + index).childElementCount === 0) {
-        boleto = new Boleto(codeBarTd.textContent)
-            .toSVG('#tdBilletCarneBarCode80mm_' + index);        
+      if (document.getElementById("tdBilletCarneBarCode80mm_" + billToPayPaymentId).childElementCount === 0) {
+        new Boleto(codeBarTd.textContent)
+            .toSVG('#tdBilletCarneBarCode80mm_' + billToPayPaymentId);        
       }
-    }
+    } */
   } 
 }
 
 var output = document.getElementById("ifrListOutput80mm").contentWindow;
-  var test = document.getElementById("tableCarnebillet80mm_0").innerHTML;
+  // var test = document.getElementById("tableCarnebillet80mm_0").innerHTML;
   output.document.open();
   output.document.write(`
       <html>
@@ -142,7 +142,7 @@ var output = document.getElementById("ifrListOutput80mm").contentWindow;
           line-height: 80%;
         }
         #tableListCarne svg {
-          height: 85% !important;
+          height: 70% !important;
         }
         </style>          
         </head>

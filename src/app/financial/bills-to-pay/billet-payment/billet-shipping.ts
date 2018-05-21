@@ -1,4 +1,5 @@
 import { Bank } from "../bank";
+import { TypeInterestCharge } from "../../type-interest-charge";
 
 export class BilletShipping {
   public id: number;
@@ -14,6 +15,7 @@ export class BilletShipping {
   public partialPayment: string;
   public documentNumber: string;
   public codeBar: string;
+  public typeInterestCharge: TypeInterestCharge;
 
   constructor() {
     this.ourNumber = "";

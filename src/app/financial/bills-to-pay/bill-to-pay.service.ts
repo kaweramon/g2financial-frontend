@@ -7,7 +7,7 @@ import {BillToPayPayment} from './bill-to-pay-payment';
 @Injectable()
 export class BillToPayService {
 
-  private urlBillToPay = 'http://localhost:8080/bill-to-pay/';
+  private urlBillToPay = 'bill-to-pay/';
   private urlSandBox = 'https://apisandbox.cieloecommerce.cielo.com.br/1/sales';
   private urlSandBoxCard = 'https://apisandbox.cieloecommerce.cielo.com.br/1/card';
   private urlCieloProduction = "https://api.cieloecommerce.cielo.com.br/1/sales/";

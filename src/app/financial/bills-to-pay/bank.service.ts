@@ -6,7 +6,7 @@ import {Bank} from './bank';
 @Injectable()
 export class BankService {
 
-  private urlBank = 'http://localhost:8080/bank/';
+  private urlBank = 'bank/';
   headers = new Headers({ 'Content-Type': 'application/json' });
   private params = new URLSearchParams();
 

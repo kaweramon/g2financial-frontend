@@ -1,5 +1,6 @@
 import {BilletShipping} from './billet-payment/billet-shipping';
 import { Bank } from './bank';
+import { TypeInterestCharge } from '../type-interest-charge';
 
 export class BillToPayPayment {
 

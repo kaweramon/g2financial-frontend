@@ -6,7 +6,7 @@ import {CieloPayment} from './cielo-payment';
 @Injectable()
 export class CieloPaymentService {
 
-  private urlCieloPayment = 'http://localhost:8080/cielo-payment/';
+  private urlCieloPayment = 'cielo-payment/';
   headers = new Headers({ 'Content-Type': 'application/json' });
   private params = new URLSearchParams();
 

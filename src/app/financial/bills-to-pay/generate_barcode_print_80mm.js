@@ -84,7 +84,8 @@ output.document.write(`
             border-bottom: 0.15mm solid #000000;
           }
           .logo80mm{
-            text-align: left;  border-right: 0.15mm solid #000000; 
+            text-align: left;  border-right: 0.15mm solid #000000;
+            padding-top: 2px; 
             border-bottom: 0.15mm solid #000000; 
           }
           .bankCode80mm {
@@ -121,6 +122,9 @@ output.document.write(`
           }
           #tableBillet80 tr {
             line-height: 80%;
+          }
+          #tableBillet80 svg {
+            height: 60% !important;
           }
           </style>          
         </head>

@@ -2,7 +2,8 @@
 <div class="col-lg-12 col-md-12" style="padding: 0px">
   <ng2-slim-loading-bar></ng2-slim-loading-bar>
 </div>
-<div class="col-lg-12 col-md-12" style="padding: 0px;" *ngIf="!isPaymentSelected && listBillToPayPayment.length > 0">
+<div class="col-lg-12 col-md-12" style="padding: 0px;" 
+  *ngIf="!isPaymentSelected && listBillToPayPayment !== undefined && listBillToPayPayment.length > 0">
   <table class="table table-bordered">
     <thead>
       <tr>
@@ -27,7 +28,9 @@
         </td>
         <td class="text-center">R$ {{billToPayPayment.amount | number : '1.2-2'}}</td>
         <td class="text-center">
-          <input type="checkbox" (change)="onChangeCheckBillet(billToPayPayment, $event)" 
+          <input type="checkbox" class="checkBillet"
+            (change)="onChangeCheckBillet(billToPayPayment, $event)"
+            onchange="onBilletCheck(this)" id="{{billToPayPayment.id}}"
             [(ngModel)]="billToPayPayment.isChecked">
         </td>
         <td *ngIf="!isBilletOld(billToPayPayment.maturity)">
@@ -78,13 +81,13 @@
 
 </div>
 <div class="row">
-  <div class="col-lg-3 col-md-3">
+  <div class="col-lg-3 col-md-3 pull-right">
     <button class="btn btn-primary" id="btnPrintCarne80mm" (click)="printCarne80mm()">Imprimir Carnê 80mm</button>
   </div>  
-  <div class="col-lg-3 col-md-3" *ngIf="!isPaymentSelected && listBillToPayPayment.length > 0">
+  <!-- <div class="col-lg-3 col-md-3" *ngIf="!isPaymentSelected && listBillToPayPayment.length > 0">
     <img src="src/assets/images/pagar-agora.png"
          class="img-responsive" alt="" style="margin-top: 25px; cursor: pointer" (click)="payBills()">
-  </div>
+  </div> -->
 </div>
 
 <div class="row">
@@ -506,7 +509,7 @@
       </tr>
       <tr>
         <td colspan=2 class="logo80mm">
-          <img style="max-height: 22px" [src]="bank?.id === 9 ? 'https://www.afterbanks.com/api/icons/santander.min.png' :
+          <img style="max-height: 19px" [src]="bank?.id === 9 ? 'data:image/png;base64,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' :
           'http://www.inovemoveis.com.br/franquias/2/14830/editor-html/575822.jpg'"/>
         </td>
         <td colspan=1 class="bankCode80mm" *ngIf="bank?.id !== 9">
@@ -517,7 +520,7 @@
         </td>
         <td colspan=1>&nbsp;</td>
         <td colspan=2 class="logo80mm">
-          <img style="max-height: 22px" [src]="bank?.id === 9 ? 'https://www.afterbanks.com/api/icons/santander.min.png' :
+          <img style="max-height: 19px" [src]="bank?.id === 9 ? 'data:image/png;base64,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' :
           'http://www.inovemoveis.com.br/franquias/2/14830/editor-html/575822.jpg'"/>
         </td>
         <td colspan="5" class="billetNumber80mm" id="tdBilletCodeBar80mmValue">
@@ -663,7 +666,13 @@
         <td colspan=1 class="billetRightField80mm">&nbsp;</td>
         <td colspan=2 class="billetRightField80mm" style="border-right: 0.15mm solid #000000;">&nbsp;</td>
         <td colspan=1>&nbsp;</td>
-        <td colspan=6 class="billetRightField80mm" style="border-bottom: none">&nbsp;</td>
+        <td colspan=6 class="billetRightField80mm" style="border-bottom: none">
+          TEXTO DE RESPONSABILIDADE DO CEDENTE: <br>
+          NÃO RECEBER APÓS 90 DIAS DE ATRASO <br>
+          JUROS: {{typeInterestCharge?.liveDaysValue | number : '1.2-2'}} REAIS AO DIA<br>
+          MULTA: {{typeInterestCharge?.interestValue | number : '1.2-2'}} REAIS A PARTIR DE
+          {{getMaturityInterestDate(billetShipping?.maturityDate)}}
+        </td>
         <td colspan=1 class="billetRightField80mm" style="border-right: 0.15mm solid #000000;">&nbsp;</td>
       </tr>
       <tr>
@@ -758,10 +767,16 @@
   </div>
 </iframe>
 
-<iframe id="ifrListOutput80mm" width="100%">
-    <div *ngFor="let billToPayPayment of listSelectedBillToPayPayment; let i = index;" 
-    id="divListSelectedBillets">
-    <div id="tableCarnebillet80mm_{{i}}">
+<iframe id="ifrListOutput80mm" width="100%" style="display: none">
+    
+</iframe>
+
+  <div *ngFor="let billToPayPaymentSelected of listSelectedBillToPayPayment; let i = index;" 
+    id="divListSelectedBillets" style="display: none">
+    <i id="codeBarHidden_{{billToPayPaymentSelected.id}}">
+        {{billToPayPaymentSelected.billetShipphing?.codeBar}}
+    </i>
+    <div id="tableCarnebillet80mm_{{billToPayPaymentSelected.id}}">
       <table id="tableListCarne" cellSpacing=0 cellPadding=0>
         <tr>
           <td style='width: 0.5cm;'></td>
@@ -783,22 +798,25 @@
         </tr>
         <tr>
           <td colspan=2 class="logo80mm">
-            <img style="max-height: 22px" [src]="billToPayPayment.bank?.id === 9 ? 'https://www.afterbanks.com/api/icons/santander.min.png' :
+            <img style="max-height: 22px" [src]="billToPayPaymentSelected.bank?.id === 9 ? 'data:image/png;base64,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' :
                     'http://www.inovemoveis.com.br/franquias/2/14830/editor-html/575822.jpg'" />
           </td>
-          <td colspan=1 class="bankCode80mm" *ngIf="billToPayPayment.bank?.id !== 9">
-            {{billToPayPayment.bank?.bankCode}}-0
+          <td colspan=1 class="bankCode80mm" *ngIf="billToPayPaymentSelected.bank?.id !== 9">
+            {{billToPayPaymentSelected.bank?.bankCode}}-0
           </td>
-          <td colspan=1 class="bankCode80mm" *ngIf="billToPayPayment.bank?.id === 9">
+          <td colspan=1 class="bankCode80mm" *ngIf="billToPayPaymentSelected.bank?.id === 9">
             033-7
           </td>
           <td colspan=1>&nbsp;</td>
           <td colspan=2 class="logo80mm">
-            <img style="max-height: 22px" [src]="billToPayPayment.bank?.id === 9 ? 'https://www.afterbanks.com/api/icons/santander.min.png' :
-                    'http://www.inovemoveis.com.br/franquias/2/14830/editor-html/575822.jpg'" />
+            <img style="max-height: 22px" [src]="billToPayPaymentSelected.bank?.id === 9 ? 
+                'data:image/png;base64,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' :
+                'http://www.inovemoveis.com.br/franquias/2/14830/editor-html/575822.jpg'" />
           </td>
-          <td colspan="5" class="billetNumber80mm" id="tdBilletCarneCodeBar80mmValue_{{billToPayPayment.id}}">
-            <!-- {{billToPayPayment.billetShipphing?.codeBar}} -->
+          <td 
+            colspan="5" class="billetNumber80mm" 
+            id="tdBilletCarneCodeBar80mmValue_{{billToPayPaymentSelected.id}}">
+            {{billToPayPaymentSelected?.billetShipphing?.codeBar}}
           </td>
         </tr>
         <tr>
@@ -816,17 +834,17 @@
         <tr>
           <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
           <td colspan=1 class="billetLeftValue80mm">
-            {{billToPayPayment?.billetShipping?.id}}
+            {{billToPayPaymentSelected?.billetShipping?.id}}
           </td>
           <td colspan=1 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000;">
-            {{billToPayPayment?.billetShipping?.id}}
+            {{billToPayPaymentSelected?.billetShipping?.id}}
           </td>
           <td colspan=1>&nbsp;</td>
           <td colspan=6 class="billetLeftValue80mm">
             PREFERENCIALMENTE NAS CASAS LOTÉRICAS ATÉ O VALOR LIMITE
           </td>
           <td colspan=1 style="border-right: 0.15mm solid #000000;" class="billetLeftValue80mm">
-            {{billToPayPayment?.billetShipping?.maturityDate | date: 'dd/MM/yyyy'}}
+            {{billToPayPaymentSelected?.billetShipping?.maturityDate | date: 'dd/MM/yyyy'}}
           </td>
         </tr>
         <tr>
@@ -843,18 +861,18 @@
         </tr>
         <tr>
           <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
-          <td colspan=1 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000;">
-            {{billToPayPayment?.bank?.agency}} / {{billToPayPayment?.bank?.transmissionCode}}
+          <td colspan=1 class="billetLeftValue80mm">
+            {{billToPayPaymentSelected?.bank?.agency}} / {{billToPayPaymentSelected?.bank?.transmissionCode}}
           </td>
           <td colspan=1 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000;">
-            {{billToPayPayment?.billetShipping?.maturityDate | date: 'dd/MM/yyyy'}}
+            {{billToPayPaymentSelected?.billetShipping?.maturityDate | date: 'dd/MM/yyyy'}}
           </td>
           <td colspan=1>&nbsp;</td>
           <td colspan=6 class="billetLeftValue80mm">
             G2 SOFT COMERCIO LTDA - ME&nbsp;&nbsp;CNPJ:14.272.237/0001-36
           </td>
-          <td colspan=1 class="billetLeftValue80mm">
-            {{billToPayPayment?.bank?.agency}} / {{billToPayPayment?.bank?.account}}
+          <td colspan=1 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000;">
+            {{billToPayPaymentSelected?.bank?.agency}} / {{billToPayPaymentSelected?.bank?.account}}
           </td>
         </tr>
         <tr>
@@ -875,16 +893,16 @@
           <tr>
             <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
             <td colspan=2 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000;">
-              {{billToPayPayment?.billetShipping?.ourNumber}}
+              {{billToPayPaymentSelected?.billetShipping?.ourNumber}}
             </td>
             <td colspan=1>&nbsp;</td>
             <td colspan=1 class="billetLeftValue80mm">{{getCurrentDate()}}</td>
-            <td colspan=2 class="billetLeftValue80mm">{{billToPayPayment?.billetShipping?.id}}</td>
+            <td colspan=2 class="billetLeftValue80mm">{{billToPayPaymentSelected?.billetShipping?.id}}</td>
             <td colspan=1 class="billetLeftValue80mm">R$</td>
             <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
             <td colspan=1 class="billetLeftValue80mm">{{getCurrentDate()}}</td>
             <td colspan=1 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000;">
-              {{billToPayPayment?.billetShipping?.ourNumber}}
+              {{billToPayPaymentSelected?.billetShipping?.ourNumber}}
             </td>
           </tr>
           <tr>
@@ -907,18 +925,18 @@
             <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
             <td colspan=1 class="billetLeftValue80mm">R$</td>
             <td colspan=1 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000;">
-              {{billToPayPayment?.billetShipping?.billValue | number : '1.2-2'}}
+              {{billToPayPaymentSelected?.billetShipping?.billValue | number : '1.2-2'}}
             </td>
             <td colspan=1>&nbsp;</td>
             <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
             <td colspan=2 class="billetLeftValue80mm">
-              {{billToPayPayment?.bank?.walletShippingNumber}}
+              {{billToPayPaymentSelected?.bank?.walletShippingNumber}}
             </td>
             <td colspan=1 class="billetLeftValue80mm">R$</td>
             <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
             <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
             <td colspan=1 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000;">
-              {{billToPayPayment?.billetShipping?.billValue | number : '1.2-2'}}
+              {{billToPayPaymentSelected?.billetShipping?.billValue | number : '1.2-2'}}
             </td>
           </tr>
           <tr>
@@ -954,7 +972,10 @@
             <td colspan=1 class="billetLeftValue80mm">&nbsp;</td>
             <td colspan=2 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000">&nbsp;</td>
             <td colspan=1>&nbsp;</td>
-            <td colspan=6 class="billetLeftValue80mm" style="border-bottom: none">&nbsp;</td>
+            <td colspan=6 class="billetLeftValue80mm" style="border-bottom: none;text-align: left">
+              TEXTO DE RESPONSABILIDADE DO CEDENTE: <br>
+              NÃO RECEBER APÓS 90 DIAS DE ATRASO
+            </td>
             <td colspan=1 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000;">&nbsp;</td>
           </tr>
           <tr>
@@ -963,7 +984,11 @@
               (+) Multa/Mora
             </td>
             <td colspan=1>&nbsp;</td>
-            <td colspan=6 class="billetRightField80mm" style="border-bottom: none">&nbsp;</td>
+            <td colspan=6 class="billetLeftValue80mm" style="border-bottom: none; text-align: left">
+              JUROS: {{billToPayPaymentSelected?.billetShipping?.typeInterestCharge?.liveDaysValue | number : '1.2-2'}} REAIS AO DIA<br>
+              MULTA: {{billToPayPaymentSelected?.billetShipping?.typeInterestCharge?.interestValue | number : '1.2-2'}} REAIS A PARTIR DE
+              {{billToPayPaymentSelected?.billetShipping?.maturityDate | date: 'dd/MM/yyyy'}}
+            </td>
             <td colspan=1 class="billetRightField80mm" style="border-right: 0.15mm solid #000000;">
               (+) Multa/Mora
             </td>
@@ -1025,13 +1050,12 @@
             <td colspan=1 class="billetLeftValue80mm" style="border-right: 0.15mm solid #000000;">&nbsp;</td>
           </tr>
           <tr>
-            <td colspan="10" id="tdBilletCarneBarCode80mm_{{i}}"></td>
+            <td colspan="10" id="tdBilletCarneBarCode80mm_{{billToPayPaymentSelected.id}}"></td>
           </tr>        
       </table>
       <!-- <div id="tdBilletCarneBarCode80mm_{{i}}" style="margin-top: -40px;"></div> -->
     </div>
   </div>
-</iframe>
 
 <div class="row" *ngIf="listSelectedBillToPayPayment.length > 0">
   <div *ngIf="paymentMethod === 'DEBIT' && isPaymentSelected">

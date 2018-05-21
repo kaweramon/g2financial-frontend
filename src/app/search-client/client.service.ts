@@ -7,7 +7,7 @@ import {Client} from './client';
 @Injectable()
 export class ClientService {
 
-  private urlClient = 'http://localhost:8080/client/';
+  private urlClient = 'client/';
   headers = new Headers({ 'Content-Type': 'application/json' });
   private params = new URLSearchParams();
 
