@@ -33,6 +33,7 @@ import { ModalLateBilletComponent } from './financial/bills-to-pay/modal-late-bi
 import {BankService} from './financial/bills-to-pay/bank.service';
 import { ModalChoosePrintTypeComponent } from './financial/bills-to-pay/modal-choose-print-type/modal-choose-print-type.component';
 import { InfoBilletLateComponent } from './financial/bills-to-pay/info-billet-late/info-billet-late.component';
+import { CadG2Service } from './cad-g2/cad-g2.service';
 
 @NgModule({
   declarations: [
@@ -66,7 +67,8 @@ import { InfoBilletLateComponent } from './financial/bills-to-pay/info-billet-la
     CurrencyMaskModule
   ],
   providers: [ClientService, BillToPayService, TypeInterestChargeService, BillToPayAmountsPaidService,
-    BillToPayPaymentService, CieloPaymentService, BilletShippingService, BankService, {provide: LOCALE_ID, useValue: 'pt-BR'}],
+    BillToPayPaymentService, CieloPaymentService, BilletShippingService, BankService, CadG2Service,
+     {provide: LOCALE_ID, useValue: 'pt-BR'}],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

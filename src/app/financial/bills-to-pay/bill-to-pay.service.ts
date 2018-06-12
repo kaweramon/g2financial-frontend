@@ -1,3 +1,4 @@
+import { Constants } from './../../util/constants';
 import { Injectable } from '@angular/core';
 import {Headers, Http, URLSearchParams} from '@angular/http';
 import {Observable} from 'rxjs/Observable';
@@ -7,7 +8,7 @@ import {BillToPayPayment} from './bill-to-pay-payment';
 @Injectable()
 export class BillToPayService {
 
-  private urlBillToPay = 'bill-to-pay/';
+  private urlBillToPay = Constants.urlEndpoint + 'bill-to-pay/';
   private urlSandBox = 'https://apisandbox.cieloecommerce.cielo.com.br/1/sales';
   private urlSandBoxCard = 'https://apisandbox.cieloecommerce.cielo.com.br/1/card';
   private urlCieloProduction = "https://api.cieloecommerce.cielo.com.br/1/sales/";
@@ -47,10 +48,10 @@ export class BillToPayService {
   }
 
   private setMerchantIdAndKey(): void {
-    //teste
+    // teste
     /*this.headers.set('MerchantId', 'fe17c77b-df00-4ad4-a8e7-378dfc41cf96');
     this.headers.set('MerchantKey', 'TCCBVGXPLLJHJFGQBFPDUWFBNSPLLJTAZAMXJWJK');*/
-    //produção
+    // produção
     this.headers.set('MerchantId', '75668c3e-f66f-41b2-83ef-77f0d94e32f1');
     this.headers.set('MerchantKey', 'KbKRY5d1iNuoTsOgpzKAwuFtfyyET6lIc6QKBvjH');
   }

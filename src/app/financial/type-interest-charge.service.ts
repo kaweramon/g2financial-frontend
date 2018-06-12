@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import {Headers, Http, URLSearchParams} from '@angular/http';
 import {Observable} from 'rxjs/Observable';
 import {TypeInterestCharge} from './type-interest-charge';
+import { Constants } from '../util/constants';
 
 @Injectable()
 export class TypeInterestChargeService {

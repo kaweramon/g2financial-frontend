@@ -3,11 +3,12 @@ import {Headers, Http, URLSearchParams} from '@angular/http';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/operator/map';
 import {Client} from './client';
+import { Constants } from '../util/constants';
 
 @Injectable()
 export class ClientService {
 
-  private urlClient = 'client/';
+  private urlClient = Constants.urlEndpoint + 'client/';
   headers = new Headers({ 'Content-Type': 'application/json' });
   private params = new URLSearchParams();
 

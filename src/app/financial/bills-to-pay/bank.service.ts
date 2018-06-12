@@ -2,11 +2,12 @@ import { Injectable } from '@angular/core';
 import {Headers, Http, URLSearchParams} from '@angular/http';
 import {Observable} from 'rxjs/Observable';
 import {Bank} from './bank';
+import { Constants } from '../../util/constants';
 
 @Injectable()
 export class BankService {
 
-  private urlBank = 'bank/';
+  private urlBank = Constants.urlEndpoint + 'bank/';
   headers = new Headers({ 'Content-Type': 'application/json' });
   private params = new URLSearchParams();
 

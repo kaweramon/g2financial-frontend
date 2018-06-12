@@ -1,3 +1,4 @@
+import { CadG2 } from './../../cad-g2/cad-g2';
 import {Component, ElementRef, ViewChild} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {BillToPayService} from './bill-to-pay.service';
@@ -14,6 +15,8 @@ import {ModalDirective} from 'ngx-bootstrap';
 import {BankService} from './bank.service';
 import {Bank} from './bank';
 import {SlimLoadingBarService} from 'ng2-slim-loading-bar';
+import { CadG2Service } from '../../cad-g2/cad-g2.service';
+import * as JSZip from "jszip";
 
 @Component({
   selector: 'app-bills-to-pay',
@@ -65,9 +68,12 @@ export class BillsToPayComponent {
 
   public ourNumberSantander: string;
 
+  public cadG2: CadG2;
+
   constructor(private route: ActivatedRoute, private service: BillToPayService, private elementRef: ElementRef,
               private bankService: BankService, private typeInterestService: TypeInterestChargeService,
-              private clientService: ClientService, private slimLoadingBarService: SlimLoadingBarService) {
+              private clientService: ClientService, private slimLoadingBarService: SlimLoadingBarService,
+              private cadG2Service: CadG2Service) {
     this.payment = new Payment();
     this.paymentMethod = 'BILLET';
     this.clientService.view(this.route.snapshot.params["clientId"]).subscribe(client => {
@@ -76,13 +82,19 @@ export class BillsToPayComponent {
     this.injectDrawBarCodeScript();
     this.slimLoadingBarService.start();
 
+    this.cadG2Service.getById(1).subscribe(result => {
+      this.cadG2 = result;
+    }, error => {
+      console.log(error);
+    });
+
     this.service.listByClientId(this.route.snapshot.params["clientId"], 'NAO').subscribe(result => {
       this.listBillToPayPayment = result;
       if (this.listBillToPayPayment !== undefined && this.listBillToPayPayment.length > 0) {
         this.listBillToPayPayment.forEach(billToPayPayment => {
           if (billToPayPayment.billetShipping) {
             billToPayPayment.billetShipping.codeBar =
-            this.getSantanderCodeBar(billToPayPayment.billetShipping);
+            this.generateSantanderCodeBar(billToPayPayment.billetShipping);
           }
           if (billToPayPayment.bank === undefined || billToPayPayment.bank === null
             && billToPayPayment.bankId) {
@@ -131,7 +143,7 @@ export class BillsToPayComponent {
   }
 
   public getConvertedDate(date: any) {
-    return moment(date).add(1, 'd').format('DD/MM/YYYY');
+    return moment(date).format('DD/MM/YYYY');
   }
 
   public isDateLessOrEqualThanToday(billToPayPayment: any): void {
@@ -150,14 +162,14 @@ export class BillsToPayComponent {
 
   private calculateInterests(billToPayment: BillToPayPayment): void {
     billToPayment.amountInterest = (billToPayment.amount / 100) * 1;
-    let year = moment(billToPayment.maturity).add(1, 'd').year();
-    let month = moment(billToPayment.maturity).add(1, 'd').month();
-    let day = moment(billToPayment.maturity).add(1, 'd').date();
+    let year = moment(billToPayment.maturity).year();
+    let month = moment(billToPayment.maturity).month();
+    let day = moment(billToPayment.maturity).date();
     let now = moment();
     let monthInArrears = parseInt(moment([now.year(), now.month(), now.date()])
       .diff(moment([year, month, day]),
       'months', true).toString(), 10);
-    let daysInArrears = parseInt(moment().diff(moment(billToPayment.maturity).add(1, 'd'),
+    let daysInArrears = parseInt(moment().diff(moment(billToPayment.maturity),
       'days').toString(), 10);
     billToPayment.daysInArrears = daysInArrears;
     let chargesInDayMonths: Array<number> = [];
@@ -206,47 +218,47 @@ export class BillsToPayComponent {
     this.codeBar = "";
     this.bankService.getBankById(bankId).subscribe(bank => {
       this.bank = bank;
-      this.generateCodeBarCaixa(this.generateQrCode(this.print()));
+      this.generateCodeBarCaixa(this.billetShipping, this.generateQrCode(this.print()));
     });
   }
 
-  private generateCodeBarCaixa(callback): void {
+  private generateCodeBarCaixa(billetShipping: BilletShipping, callback): void {
     // Posição 1-3 -> Identificação do banco (104)
     // Posição 4 -> Código da moeda (9 - Real)
     let codeBarToReturn: string = "";
     // Posição 06 - 09 -> Fator de Vencimento
-    let maturityFactor = this.getMaturityFactor(this.billetShipping.maturityDate);
-    let billetValueCalculated = this.getBilletCodeBarValue(this.billetShipping.billValue).toString();
+    let maturityFactor = this.getMaturityFactor(billetShipping.maturityDate);
+    let billetValueCalculated = this.getBilletCodeBarValue(billetShipping.billValue).toString();
     // 20 – 25 6 9 (6) Código do Beneficiário
     let benefictCode = "377192";
     // 26 – 26 1 9 (1) DV do Código do Beneficiário
     let dvBenefictCode = this.getVerifyDigitBeneficiaryCode(benefictCode);
     // 27 – 29 3 9 (3) Nosso Número - Seqüência 1
-    codeBarToReturn += this.billetShipping.ourNumber.substring(0, 2);
+    codeBarToReturn += billetShipping.ourNumber.substring(0, 2);
     // 30 – 30 1 9 (1) Constante 1
     codeBarToReturn += "1";
     // 31 – 33 3 9 (3) Nosso Número - Seqüência 2
-    codeBarToReturn += this.billetShipping.ourNumber.substring(3, 5);
+    codeBarToReturn += billetShipping.ourNumber.substring(3, 5);
     // 34 – 34 1 9 (1) Constante 2
     codeBarToReturn += "4";
     // 35 – 43 9 9 (9) Nosso Número - Seqüência 3
-    codeBarToReturn += this.billetShipping.ourNumber.substring(6, this.billetShipping.ourNumber.length - 1);
+    codeBarToReturn += billetShipping.ourNumber.substring(6, billetShipping.ourNumber.length - 1);
     // 44 – 44 1 9 (1) DV do Campo Livre
     // Código do beneficiário -> 377192
-    let dvFreeCamp = this.getFreeCampCodeBar("377192", dvBenefictCode.toString(), this.billetShipping.ourNumber);
+    let dvFreeCamp = this.getFreeCampCodeBar("377192", dvBenefictCode.toString(), billetShipping.ourNumber);
     this.generalVerifyDigit = this.getVerifyDigitGeneral(maturityFactor, billetValueCalculated, benefictCode,
-      dvBenefictCode.toString(), this.billetShipping.ourNumber, dvFreeCamp);
+      dvBenefictCode.toString(), billetShipping.ourNumber, dvFreeCamp);
 
     let field1 = "1049" + benefictCode.charAt(0) + "." + benefictCode.substring(1, 5) +
       this.getVerifyDigitFields123("1049" + benefictCode.charAt(0) + benefictCode.substring(1, 5));
-    let field2 = benefictCode.charAt(benefictCode.length - 1) + dvBenefictCode + this.billetShipping.ourNumber.substring(0, 3)
-      + ".1" + this.billetShipping.ourNumber.substring(3, 6) + "4" +
+    let field2 = benefictCode.charAt(benefictCode.length - 1) + dvBenefictCode + billetShipping.ourNumber.substring(0, 3)
+      + ".1" + billetShipping.ourNumber.substring(3, 6) + "4" +
       this.getVerifyDigitFields123(benefictCode.charAt(benefictCode.length - 1) + dvBenefictCode +
-        this.billetShipping.ourNumber.substring(0, 3) + "1" + this.billetShipping.ourNumber.substring(3, 6) + "4");
-    let field3 = this.billetShipping.ourNumber.substring(6, 11) + "." +
-      this.billetShipping.ourNumber.substring(11, this.billetShipping.ourNumber.length) + dvFreeCamp +
-      this.getVerifyDigitFields123(this.billetShipping.ourNumber.substring(6, 11) +
-        this.billetShipping.ourNumber.substring(11, this.billetShipping.ourNumber.length) + dvFreeCamp);
+        billetShipping.ourNumber.substring(0, 3) + "1" + billetShipping.ourNumber.substring(3, 6) + "4");
+    let field3 = billetShipping.ourNumber.substring(6, 11) + "." +
+      billetShipping.ourNumber.substring(11, billetShipping.ourNumber.length) + dvFreeCamp +
+      this.getVerifyDigitFields123(billetShipping.ourNumber.substring(6, 11) +
+        billetShipping.ourNumber.substring(11, billetShipping.ourNumber.length) + dvFreeCamp);
 
     this.codeBarFirstGroup = field1.replace(".", "").replace(" ", "");
     this.codeBarSecondGroup = field2.replace(".", "").replace(" ", "");
@@ -257,8 +269,10 @@ export class BillsToPayComponent {
     codeBarToReturn = field1 + " " + field2 + " " + field3 + " " + this.generalVerifyDigit + " " +
     maturityFactor + billetValueCalculated;
 
-    this.billetShipping.ourNumber = "14" + this.billetShipping.ourNumber + "-" +
-      this.getVerifyDigitOurNumber("14" + this.billetShipping.ourNumber);
+    billetShipping.ourNumber = "14" + billetShipping.ourNumber + "-" +
+      this.getVerifyDigitOurNumber("14" + billetShipping.ourNumber);
+
+    billetShipping.codeBar = codeBarToReturn;
 
     this.codeBar = codeBarToReturn;
     if (callback) {
@@ -344,7 +358,7 @@ export class BillsToPayComponent {
 
   // Cálculo do fator de vencimento Posição: 06-09 - CAIXA
   private getMaturityFactor(date: any): any {
-    return moment(date).add(1, 'd').diff(moment("1997-10-07"), 'days');
+    return moment(date).diff(moment("1997-10-07"), 'days');
   }
 
   // Cálculo do digito verificador do código do beneficiário - CAIXA
@@ -594,24 +608,40 @@ export class BillsToPayComponent {
 
   public showModalBillet(billetShipping: BilletShipping, bankId: number): void {
     this.billetShipping = Object.assign({}, billetShipping);
+    if (!this.typeInterestCharge || !this.typeInterestCharge.liveDaysValue) {
+      if (this.billetShipping.type) {
+        this.typeInterestService.getByType(this.billetShipping.type).subscribe(result => {
+          this.typeInterestCharge = result;
+        }, error => {
+          console.log(error);
+        });
+      }
+    }
     this.bankService.getBankById(bankId).subscribe(bank => {
       this.bank = bank;
       if (bank.id === 10)
-        this.generateCodeBarCaixa(undefined);
+        this.generateCodeBarCaixa(this.billetShipping, undefined);
       else if (bank.id === 9)
-        this.generateBarCodeSantander(this.billetShipping);
+        this.generateSantanderCodeBar(this.billetShipping);
       this.modalLateBill.show();
     });
   }
 
-  public showModalChoosePrintType(billetShipping: BilletShipping, bankId: number): void {
-    this.billetShipping = Object.assign({}, billetShipping);
-    this.bankService.getBankById(bankId).subscribe(bank => {
+  public showModalChoosePrintType(billToPayPayment: BillToPayPayment): void {
+    this.billetShipping = Object.assign({}, billToPayPayment.billetShipping);
+    if (!this.typeInterestCharge || !this.typeInterestCharge.liveDaysValue) {
+      this.typeInterestService.getByType(billToPayPayment.description).subscribe(result => {
+        this.typeInterestCharge = result;
+      }, error => {
+
+      });
+    }
+    this.bankService.getBankById(billToPayPayment.bankId).subscribe(bank => {
       this.bank = bank;
       if (bank.id === 10)
-        this.generateCodeBarCaixa(undefined);
+        this.generateCodeBarCaixa(this.billetShipping, undefined);
       else if (bank.id === 9)
-        this.generateBarCodeSantander(this.billetShipping);
+        this.generateSantanderCodeBar(this.billetShipping);
       this.modalChoosePrintType.show();
     });
   }
@@ -632,40 +662,9 @@ export class BillsToPayComponent {
     return moment(maturityDate) < moment([2017, 8, 30]);
   }
 
-  private generateBarCodeSantander(billetShipping: BilletShipping): void {
-    this.ourNumberSantander = billetShipping.ourNumber.substring(
-      billetShipping.ourNumber.length - 12, billetShipping.ourNumber.length);
-
-    let firstGroup = '03399' + this.beneficiaryCodeSantander.substr(0, 4)
-      + this.getFirstGroupSantander();
-
-    let secondGroup = this.beneficiaryCodeSantander.substr(4, 7)
-      + this.ourNumberSantander.substr(0, 7) + this.getSecondGroupSantander(billetShipping);
-
-    let thirdGroup = this.ourNumberSantander.substring(7, 12)
-      + this.getVerifyDigitOurNumberSantander(this.ourNumberSantander) + '0101' +
-      this.getThridGroupSantander(this.ourNumberSantander);
-
-    let dvVerify = this.getVerifyDigitSantander('0339' + this.getMaturityFactor(billetShipping.maturityDate) +
-      this.getBilletCodeBarValue(billetShipping.billValue) + '9' + this.beneficiaryCodeSantander +
-      this.ourNumberSantander.substr(0, 12) + this.getVerifyDigitOurNumberSantander(this.ourNumberSantander) + '0' + '101');
-
-    let strBillValue: string = '';
-    let billValue = this.getBilletCodeBarValue(billetShipping.billValue);
-    for (let i = 0; i < (10 - billValue.length); i++) {
-      strBillValue += '0';
-    }
-    strBillValue += billValue;
-
-    let fifthGroup = this.getMaturityFactor(billetShipping.maturityDate)
-      + strBillValue;
-
-    billetShipping.codeBar = firstGroup + ' ' + secondGroup + ' ' + thirdGroup + ' ' + dvVerify + ' ' + fifthGroup;
-  }
-
   private getFirstGroupSantander(): number {
     let barCodeFirstGroup: string = ('03399' + this.beneficiaryCodeSantander.substr(0, 4))
-      .split('').reverse().join('');
+      .replace(".", "").split('').reverse().join('');
     let totalSum: number = 0;
     for (let i = 0; i < barCodeFirstGroup.length; i++) {
       if (i % 2 === 0 || i === 0) {
@@ -738,10 +737,8 @@ export class BillsToPayComponent {
   }
 
   public getThridGroupSantander(ourNumberSantander: string): number {
-
-    let thirdGroupInverted = (ourNumberSantander.substring(7, 12) +
-    this.getVerifyDigitOurNumberSantander(ourNumberSantander) +
-      '0101').split('').reverse().join('');
+    let thirdGroupInverted = (ourNumberSantander.substring(7, ourNumberSantander.length) +
+    + "0" + "101").split('').reverse().join('');
     let total: number = 0;
     for (let i = 0; i < thirdGroupInverted.length; i++) {
       if (i % 2 === 0 || i === 0) {
@@ -774,7 +771,10 @@ export class BillsToPayComponent {
       total += parseInt(strBarCodeInverted[i], 10) * numToMult;
       numToMult++;
     }
-    return ((total * 10) % 11);
+    let rest = ((total * 10) % 11);
+    if (rest === 0 || rest === 10)
+      return 1;
+    return rest;
   }
 
   public onChangeCheckBillet(billToPayPayment: BillToPayPayment, event: any): void {
@@ -788,7 +788,10 @@ export class BillsToPayComponent {
         });
       }
       if (billToPayPayment.billetShipping) {
-        billToPayPayment.billetShipping.codeBar = this.getSantanderCodeBar(billToPayPayment.billetShipping);
+        if (billToPayPayment.bank.id === 9)
+          this.generateSantanderCodeBar(billToPayPayment.billetShipping);
+        else
+          this.generateCodeBarCaixa(billToPayPayment.billetShipping, undefined);
         setTimeout(() => {
           document.getElementById("tdBilletCarneCodeBar80mmValue_" + billToPayPayment.id).textContent =
           billToPayPayment.billetShipping.codeBar;
@@ -814,22 +817,26 @@ export class BillsToPayComponent {
     document.getElementById("btnPrintCarne80mm").removeAttribute("disabled");
   }
 
-  private getSantanderCodeBar(billetShipping: BilletShipping): string {
-    let ourNumberSantander = billetShipping.ourNumber.substring(
-      billetShipping.ourNumber.length - 12, billetShipping.ourNumber.length);
+  private generateSantanderCodeBar(billetShipping: BilletShipping): void {
 
-    let firstGroup = '03399' + this.beneficiaryCodeSantander.substr(0, 4)
+    let ourNumberSantander = billetShipping.ourNumber;
+
+    let firstGroup = '03399.' + this.beneficiaryCodeSantander.substr(0, 4)
       + this.getFirstGroupSantander();
 
-    let secondGroup = this.beneficiaryCodeSantander.substr(4, 7)
+     let secondGroup = this.beneficiaryCodeSantander.substr(4, 7)
       + ourNumberSantander.substr(0, 7) + this.getSecondGroupSantander(billetShipping);
 
-    let thirdGroup = ourNumberSantander.substring(7, 12)
-      + this.getVerifyDigitOurNumberSantander(ourNumberSantander) + '0101' + this.getThridGroupSantander(ourNumberSantander);
+    secondGroup = secondGroup.substr(0, 5) + "." + secondGroup.substr(5, secondGroup.length);
+
+    let thirdGroup = ourNumberSantander.substring(7, ourNumberSantander.length)
+      + '0101' + this.getThridGroupSantander(ourNumberSantander);
+
+    thirdGroup = thirdGroup.substr(0, 5) + "." + thirdGroup.substr(5, thirdGroup.length);
 
     let dvVerify = this.getVerifyDigitSantander('0339' + this.getMaturityFactor(billetShipping.maturityDate) +
       this.getBilletCodeBarValue(billetShipping.billValue) + '9' + this.beneficiaryCodeSantander +
-      ourNumberSantander.substr(0, 12) + this.getVerifyDigitOurNumberSantander(ourNumberSantander) + '0' + '101');
+      ourNumberSantander + '0' + '101');
 
     let strBillValue: string = '';
     let billValue = this.getBilletCodeBarValue(billetShipping.billValue);
@@ -841,7 +848,23 @@ export class BillsToPayComponent {
     let fifthGroup = this.getMaturityFactor(billetShipping.maturityDate)
       + strBillValue;
 
-    return firstGroup + ' ' + secondGroup + ' ' + thirdGroup + ' ' + dvVerify + ' ' + fifthGroup;
+    this.codeBar = firstGroup + ' ' + secondGroup + ' ' + thirdGroup + ' ' + dvVerify + ' ' + fifthGroup;
+
+    billetShipping.codeBar = firstGroup + ' ' + secondGroup + '. ' + thirdGroup + ' ' + dvVerify + ' ' + fifthGroup;
+  }
+
+  private getCadG2Formatted(): string {
+    if (this.cadG2 !== null && this.cadG2 !== undefined) {
+      let strToReturn = this.cadG2.razaoSocial !== null ? this.cadG2.razaoSocial : this.cadG2.fantasyName;
+      strToReturn += ", " + this.cadG2.address + ", " + this.cadG2.num + ", " +
+      this.cadG2.city + ", " + this.cadG2.neighborhood + ". CNPJ: " + this.cadG2.cnpj;
+
+      return strToReturn;
+    }
+  }
+
+  public goToAttBillet(): void {
+    window.open('https://www.santander.com.br/br/resolva-on-line/reemissao-de-boleto-vencido', '_blank');
   }
 
 }

@@ -1,6 +1,9 @@
 var number = '34195.00008 01233.203189 64221.470004 5 84410000002000';
 document.getElementById("tdBilletBarCode80mm").textContent = "";
-new Boleto(document.getElementById("tdBilletCodeBar80mmValue").textContent).toSVG('#tdBilletBarCode80mm');
+var barCode = document.getElementById("tdBilletCodeBar80mmValue").textContent;
+console.log(barCode);
+// barCode.replace(".","").replace(".","");
+new Boleto(barCode).toSVG('#tdBilletBarCode80mm');
 var output = document.getElementById("ifrOutput80mm").contentWindow;
 var printContent = document.getElementById("tablebillet80mm").innerHTML;
 output.document.open();
@@ -90,16 +93,14 @@ output.document.write(`
           }
           .bankCode80mm {
             font-size: 5mm; font-family: arial, verdana; font-weight : bold;
-            font-style: italic; text-align: center; vertical-align: bottom;
+            font-style: italic; text-align: center; 
             border-right: none; border-bottom: 0.15mm solid #000000;
           }
           .billetNumber80mm {
                 font-size: 5mm;
               font-family: arial, verdana;
               font-weight: bold;
-              vertical-align: bottom;
-              border-bottom: 0.15mm solid #000000;
-              padding-bottom: 0.5px;    
+              border-bottom: 0.15mm solid #000000;   
               padding-left: 1px;
           }
           .billetRightField80mm {
@@ -121,10 +122,10 @@ output.document.write(`
             white-space: nowrap !important;
           }
           #tableBillet80 tr {
-            line-height: 80%;
+            line-height: 50%;
           }
           #tableBillet80 svg {
-            height: 60% !important;
+            height: 30% !important;
           }
           </style>          
         </head>

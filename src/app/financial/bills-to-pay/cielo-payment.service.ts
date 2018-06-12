@@ -2,11 +2,12 @@ import { Injectable } from '@angular/core';
 import {Headers, Http, URLSearchParams} from '@angular/http';
 import {Observable} from 'rxjs/Observable';
 import {CieloPayment} from './cielo-payment';
+import { Constants } from '../../util/constants';
 
 @Injectable()
 export class CieloPaymentService {
 
-  private urlCieloPayment = 'cielo-payment/';
+  private urlCieloPayment = Constants.urlEndpoint + 'cielo-payment/';
   headers = new Headers({ 'Content-Type': 'application/json' });
   private params = new URLSearchParams();
 

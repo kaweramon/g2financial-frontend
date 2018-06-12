@@ -1,4 +1,5 @@
 document.getElementById("boleto").textContent = "";
+console.log(document.getElementById("tdCodeBar").textContent);
 new Boleto(document.getElementById("tdCodeBar").textContent).toSVG('#boleto');
 var output = document.getElementById("ifrOutput").contentWindow;
 var printContent = document.getElementById("tablebillet").innerHTML;

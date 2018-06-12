@@ -27,6 +27,7 @@ var output = document.getElementById("ifrListOutput80mm").contentWindow;
       <html>
         <head>
         <style>
+        @page { size: portrait; }
         .logo{
           text-align: center; height: 10mm; border-right: 1mm solid #000000; border-bottom: 1mm solid #000000
         }
@@ -104,15 +105,15 @@ var output = document.getElementById("ifrListOutput80mm").contentWindow;
         }
         .logo80mm{
           text-align: left;  border-right: 0.15mm solid #000000; 
-          border-bottom: 0.15mm solid #000000; 
+          border-bottom: 0.15mm solid #000000; width: 60px
         }
         .bankCode80mm {
-          font-size: 5mm; font-family: arial, verdana; font-weight : bold;
+          font-size: 3mm; font-family: arial, verdana; font-weight : bold;
           font-style: italic; text-align: center; vertical-align: bottom;
           border-right: none; border-bottom: 0.15mm solid #000000;
         }
         .billetNumber80mm {
-              font-size: 5mm;
+              font-size: 3mm;
             font-family: arial, verdana;
             font-weight: bold;
             vertical-align: bottom;
@@ -139,10 +140,11 @@ var output = document.getElementById("ifrListOutput80mm").contentWindow;
           white-space: nowrap !important;
         }
         #tableListCarne tr {
-          line-height: 80%;
+          line-height: 70%;
         }
         #tableListCarne svg {
-          height: 70% !important;
+          height: 60% !important;
+          max-height: 35px;
         }
         </style>          
         </head>

@@ -16,6 +16,9 @@ export class BilletShipping {
   public documentNumber: string;
   public codeBar: string;
   public typeInterestCharge: TypeInterestCharge;
+  public type: string;
+  public mulct: number;
+  public interest: number;
 
   constructor() {
     this.ourNumber = "";

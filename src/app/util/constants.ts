@@ -1,7 +1,10 @@
 import {CieloPayment} from '../financial/bills-to-pay/cielo-payment';
 import {CieloPaymentCards} from '../financial/bills-to-pay/cielo-payment-cards';
 
+
 export class Constants {
+
+  public static urlEndpoint: string = "http://177.75.66.175:6464/";
 
   public static PAYMENT_SUCCESS: string = "Pagamento realizado com Sucesso";
 
@@ -36,7 +39,7 @@ export class Constants {
     cieloPayment.authorizationCode = clientPaymentReturn.Payment.AuthorizationCode;
     cieloPayment.authenticate = clientPaymentReturn.Payment.Authenticate;
     cieloPayment.recurrent = clientPaymentReturn.Payment.Recurrent;
-    //Credit Card
+    // Credit Card
     cieloPayment.cieloPaymentCards.cardToken = cardToken !== undefined ? cardToken : '';
     if (clientPaymentReturn.Payment.CreditCard !== undefined) {
       cieloPayment.cieloPaymentCards.cardNumber = clientPaymentReturn !== null

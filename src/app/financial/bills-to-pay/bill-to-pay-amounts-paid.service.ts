@@ -2,11 +2,12 @@ import { Injectable } from '@angular/core';
 import {Headers, Http, URLSearchParams} from '@angular/http';
 import {BillToPayAmountsPaid} from './bill-to-pay-amounts-paid';
 import {Observable} from 'rxjs/Observable';
+import { Constants } from '../../util/constants';
 
 @Injectable()
 export class BillToPayAmountsPaidService {
 
-  private urlBillToPayAmountPaid = 'http://localhost:8080/bill-to-pay-amounts-paid/';
+  private urlBillToPayAmountPaid = Constants.urlEndpoint + 'bill-to-pay-amounts-paid/';
   headers = new Headers({ 'Content-Type': 'application/json' });
   private params = new URLSearchParams();
 

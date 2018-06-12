@@ -6,7 +6,7 @@
   "apps": [
     {
       "root": "src",
-      "outDir": "../src/main/webapp",
+      "outDir": "dist",
       "assets": [
         "assets",
         "favicon_g2.ico"
@@ -21,7 +21,10 @@
       "styles": [
         "styles.css"
       ],
-      "scripts": [],
+      "scripts": [
+        "../node_modules/jszip/dist/jszip.min.js",
+        "../node_modules/jspdf/dist/jspdf.min.js"
+      ],
       "environmentSource": "environments/environment.ts",
       "environments": {
         "dev": "environments/environment.ts",
